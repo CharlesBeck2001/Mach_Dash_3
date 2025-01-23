@@ -69,7 +69,7 @@ time_ranges = {
     "Last 6 Months": 180
 }
 
-day_list = [7,30,90,180]
+day_list = [10,30,90,180]
 
 # Add custom CSS to adjust width
 st.markdown(
