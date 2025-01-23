@@ -177,57 +177,6 @@ if 1==1:
         supabase_key = st.secrets["supabase_key"]
     
         sql_query2 = f"""
-        WITH source_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as source_decimal,
-      cal.id as source_id,
-      cal.chain as source_chain,
-      cmd.current_price::FLOAT AS source_price,
-      (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.source_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.source_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    dest_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as dest_decimal,
-      cal.id as dest_id,
-      cal.chain as dest_chain,
-      cmd.current_price::FLOAT AS dest_price,
-      (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.dest_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.dest_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    overall_volume_table_2 AS(
-    SELECT DISTINCT
-      svt.*,
-      dvt.dest_id as dest_id,
-      dvt.dest_chain as dest_chain,
-      dvt.dest_decimal as dest_decimal,
-      dvt.dest_price as dest_price,
-      dvt.dest_volume as dest_volume,
-      (dvt.dest_volume + svt.source_volume) as total_volume
-    FROM source_volume_table svt
-    INNER JOIN dest_volume_table dvt
-      ON svt.order_uuid = dvt.order_uuid
-    )
         SELECT 
           TO_CHAR(
             TO_TIMESTAMP(hour_series || ':00:00', 'HH24:MI:SS'),
@@ -235,128 +184,29 @@ if 1==1:
           ) AS hour_of_day,
           COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume
         FROM generate_series(0, 23) AS hour_series  -- Generate hours from 0 to 23
-        LEFT JOIN overall_volume_table_2 svt
+        LEFT JOIN main_volume_table svt
           ON EXTRACT(HOUR FROM svt.block_timestamp) = hour_series  -- Match the hour of the trade to the generated hours
+        WHERE svt.block_timestamp > '{sd}'
         GROUP BY hour_series
         ORDER BY hour_series
         """
     
         sql_query3 = f"""
-        WITH source_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as source_decimal,
-      cal.id as source_id,
-      cal.chain as source_chain,
-      cmd.current_price::FLOAT AS source_price,
-      (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.source_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.source_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    dest_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as dest_decimal,
-      cal.id as dest_id,
-      cal.chain as dest_chain,
-      cmd.current_price::FLOAT AS dest_price,
-      (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.dest_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.dest_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    overall_volume_table_2 AS(
-    SELECT DISTINCT
-      svt.*,
-      dvt.dest_id as dest_id,
-      dvt.dest_chain as dest_chain,
-      dvt.dest_decimal as dest_decimal,
-      dvt.dest_price as dest_price,
-      dvt.dest_volume as dest_volume,
-      (dvt.dest_volume + svt.source_volume) as total_volume
-    FROM source_volume_table svt
-    INNER JOIN dest_volume_table dvt
-      ON svt.order_uuid = dvt.order_uuid
-    )
         SELECT 
           TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
           COALESCE(SUM(svt.total_volume), 0) AS total_daily_volume
-        FROM overall_volume_table_2 svt
+        FROM main_volume_table svt
+        WHERE svt.block_timestamp > '{sd}'
         GROUP BY DATE_TRUNC('day', svt.block_timestamp)
         ORDER BY day
         """
     
         sql_query4 = f"""
-        WITH source_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as source_decimal,
-      cal.id as source_id,
-      cal.chain as source_chain,
-      cmd.current_price::FLOAT AS source_price,
-      (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.source_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.source_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    dest_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as dest_decimal,
-      cal.id as dest_id,
-      cal.chain as dest_chain,
-      cmd.current_price::FLOAT AS dest_price,
-      (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.dest_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.dest_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    overall_volume_table_2 AS(
-    SELECT DISTINCT
-      svt.*,
-      dvt.dest_id as dest_id,
-      dvt.dest_chain as dest_chain,
-      dvt.dest_decimal as dest_decimal,
-      dvt.dest_price as dest_price,
-      dvt.dest_volume as dest_volume,
-      (dvt.dest_volume + svt.source_volume) as total_volume
-    FROM source_volume_table svt
-    INNER JOIN dest_volume_table dvt
-      ON svt.order_uuid = dvt.order_uuid
-    )
         SELECT 
           TO_CHAR(DATE_TRUNC('week', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS week_starting,
           COALESCE(SUM(svt.total_volume), 0) AS total_weekly_volume
-        FROM overall_volume_table_2 svt
+        FROM main_volume_table svt
+        WHERE svt.block_timestamp > '{sd}'
         GROUP BY DATE_TRUNC('week', svt.block_timestamp)
         ORDER BY week_starting
         """
@@ -364,65 +214,56 @@ if 1==1:
         sql_query5 = f"""
         SELECT 
             TO_CHAR(
-                TO_TIMESTAMP(DATE_PART('hour', op.block_timestamp) || ':00:00', 'HH24:MI:SS'),
+                TO_TIMESTAMP(DATE_PART('hour', svt.block_timestamp) || ':00:00', 'HH24:MI:SS'),
                 'FMHH:MI AM'
             ) AS hour_of_day,
             COUNT(*) AS total_trades
-        FROM order_placed op
-        INNER JOIN match_executed me
-        ON op.order_uuid = me.order_uuid
-        WHERE op.block_timestamp >= '{sd}'
-        GROUP BY DATE_PART('hour', op.block_timestamp)
-        ORDER BY DATE_PART('hour', op.block_timestamp)
+        FROM main_volume_table svt
+        WHERE svt.block_timestamp >= '{sd}'
+        GROUP BY DATE_PART('hour', svt.block_timestamp)
+        ORDER BY DATE_PART('hour', svt.block_timestamp)
         """
     
         sql_query6 = f"""
         SELECT 
-            DATE(op.block_timestamp) AS trade_date,
+            DATE(svt.block_timestamp) AS trade_date,
             COUNT(*) AS total_trades
-        FROM order_placed op
-        INNER JOIN match_executed me
-        ON op.order_uuid = me.order_uuid
-        WHERE op.block_timestamp >= '{sd}'
-        GROUP BY DATE(op.block_timestamp)
+        FFROM main_volume_table svt
+        WHERE svt.block_timestamp >= '{sd}'
+        GROUP BY DATE(svt.block_timestamp)
         ORDER BY trade_date
         """
     
         sql_query7 = f"""
         SELECT 
-            DATE_TRUNC('week', op.block_timestamp) AS week_start_date,
+            DATE_TRUNC('week', svt.block_timestamp) AS week_start_date,
             COUNT(*) AS total_trades
-        FROM order_placed op
-        INNER JOIN match_executed me
-        ON op.order_uuid = me.order_uuid
-        WHERE op.block_timestamp >= '{sd}'
-        GROUP BY DATE_TRUNC('week', op.block_timestamp)
+        FFROM main_volume_table svt
+        WHERE svt.block_timestamp >= '{sd}'
+        GROUP BY DATE_TRUNC('week', svt.block_timestamp)
         ORDER BY week_start_date
         """
         
         sql_query8 = f"""
+        WITH user_list AS (
         SELECT
-            DISTINCT address AS unique_address_count
-        FROM (
-            SELECT sender_address AS address
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
-            UNION
-            SELECT maker_address AS address
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
-            WHERE op.block_timestamp >= '{sd}'
-        ) AS unique_addresses
+                    DISTINCT address AS unique_address_count
+                FROM (
+                    SELECT sender_address AS address
+                    FROM main_volume_table
+                    UNION
+                    SELECT filler_address AS address
+                    FROM main_volume_table
+                    WHERE main_volume_table.block_timestamp >= '2024-12-24T20:35:29'
+                ) AS unique_addresses
+        )
+        SELECT COUNT(unique_address_count) FROM user_list
         """
         
         sql_query9 = f"""
-        SELECT COUNT(op.order_uuid)
-            FROM order_placed op
-            INNER JOIN match_executed me
-            ON op.order_uuid = me.order_uuid
-            WHERE op.block_timestamp >= '{sd}'
+        SELECT COUNT(mvt.order_uuid)
+            FROM main_volume_table mvt
+            WHERE mvt.block_timestamp >= '{sd}'
         """
         
         sql_query10 = f"""
@@ -430,16 +271,12 @@ if 1==1:
             address,
             COUNT(order_id) AS trade_count
         FROM (
-            SELECT sender_address AS address, op.order_uuid AS order_id
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
+            SELECT sender_address AS address, mvt.order_uuid AS order_id
+            FROM main_volume_table mvt
             UNION ALL
-            SELECT maker_address AS address, op.order_uuid AS order_id
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
-            WHERE op.block_timestamp >= '{sd}'
+            SELECT filler_address AS address, mvt.order_uuid AS order_id
+            FROM main_volume_table mvt
+            WHERE mvt.block_timestamp >= '{sd}'
         ) AS all_trades
         GROUP BY address
         ORDER BY trade_count DESC
