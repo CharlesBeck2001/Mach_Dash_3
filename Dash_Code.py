@@ -175,14 +175,6 @@ if 1==1:
  # Supabase credentials
         supabase_url = "https://fzkeftdzgseugijplhsh.supabase.co"
         supabase_key = st.secrets["supabase_key"]
-        
-        sql_query1 = f"""  
-        SELECT op.order_uuid
-        FROM order_placed op
-        INNER JOIN match_executed me
-        ON op.order_uuid = me.order_uuid
-        WHERE op.block_timestamp >= '{sd}'
-        """
     
         sql_query2 = f"""
         WITH source_volume_table AS(
@@ -880,8 +872,6 @@ if 1==1:
         """
         
         
-        df_sql_timeframe = execute_sql(sql_query1)
-        df_sql_timeframe = pd.json_normalize(df_sql_timeframe['result'])
         #st.write(df_sql_timeframe)
         # Call the function
         df_hourly_volume = execute_sql(sql_query2)
