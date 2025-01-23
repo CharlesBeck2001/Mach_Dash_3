@@ -1105,13 +1105,12 @@ if "preloaded" not in st.session_state:
     for i in day_list:
         date = today - timedelta(days=i)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
-    
+        st.write(date)
         data = stats_box_maker(date)
         preloaded[i] = data
     
     date = time_point['oldest_time'][0]
     data = stats_box_maker(date)
-    st.write(date)
     preloaded[0] = data
 
     st.session_state["preloaded"] = preloaded
