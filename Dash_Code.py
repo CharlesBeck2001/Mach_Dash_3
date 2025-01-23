@@ -63,7 +63,7 @@ time_point = pd.json_normalize(time_point['result'])
 # Time range options
 time_ranges = {
     "All Time": None,  # Special case for no date filter
-    "Last Week": 7,
+    "Last Week": 10,
     "Last Month": 30,
     "Last 3 Months": 90,
     "Last 6 Months": 180
@@ -998,7 +998,7 @@ if 1==1:
 
         total_volume = float(dfs["weekly_volume"]["total_weekly_volume"].sum())
         total_users = len(df_total_users)
-
+        
         
         return {
             "total_volume": total_volume,
