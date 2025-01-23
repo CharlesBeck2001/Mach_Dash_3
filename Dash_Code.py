@@ -934,7 +934,7 @@ if 1==1:
         average_trades = df_average_trades['average_trades_per_user'].iloc[0]
     
         df_trade_address = pd.json_normalize(df_trade_address['result'])
-        df_volume_address = pd.json_normalize(df_volume_address['result'])
+        #df_volume_address = pd.json_normalize(df_volume_address['result'])
     
         df_trade_rank = pd.json_normalize(df_trade_rank['result'])
     
