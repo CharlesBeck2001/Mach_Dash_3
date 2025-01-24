@@ -1956,7 +1956,7 @@ if "preloaded_2" not in st.session_state:
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
 
-        date = today - timedelta(days=7)
+        date = today - timedelta(days=6)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
         
         week_vol = get_volume_vs_date(asset, date)
@@ -2030,7 +2030,7 @@ with col2:
             
     data = st.session_state["preloaded_2"]['Total' + ' Week Volume']
 
-    date = today - timedelta(days=7)
+    date = today - timedelta(days=6)
     date = date.strftime('%Y-%m-%dT%H:%M:%S')
     st.write(date)
     
