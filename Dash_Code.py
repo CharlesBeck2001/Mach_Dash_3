@@ -1276,10 +1276,13 @@ def get_volume_vs_date(asset_id, sd):
             FROM source_volume_table_3 svt
         ),
         combined_volume_table AS (
-            SELECT *
+            SELECT DISTINCT
+                * 
             FROM overall_volume_table_2
-            FULL OUTER JOIN overall_volume_table_3
-            USING (order_uuid)
+            UNION
+            SELECT DISTINCT
+                * 
+            FROM overall_volume_table_3
         )
         SELECT 
             TO_CHAR(DATE_TRUNC('day', svt.date), 'FMMonth FMDD, YYYY') AS day,
@@ -1368,10 +1371,13 @@ def get_volume_vs_date(asset_id, sd):
             FROM source_volume_table_3 svt
         ),
         combined_volume_table AS (
-            SELECT *
+            SELECT DISTINCT
+                * 
             FROM overall_volume_table_2
-            FULL OUTER JOIN overall_volume_table_3
-            USING (order_uuid)
+            UNION
+            SELECT DISTINCT
+                * 
+            FROM overall_volume_table_3
         )
         SELECT 
             TO_CHAR(DATE_TRUNC('day', svt.date), 'FMMonth FMDD, YYYY') AS day,
