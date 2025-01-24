@@ -1048,9 +1048,140 @@ def asset_fetch_day():
     FROM consolidated_volumes
     ORDER BY total_volume DESC
     """
+
+    asset_query_3 = f"""
+    WITH latest_date AS (
+            SELECT DATE_TRUNC('day', MAX(created_at)) AS max_date
+            FROM mm_order_placed
+        ),
+        source_volume_table_0 AS (
+        SELECT DISTINCT
+            op.*, 
+            ti.decimals AS source_decimal,
+            cal.id AS source_id,
+            cal.chain AS source_chain,
+            cmd.current_price::FLOAT AS source_price,
+            (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
+        FROM order_placed op
+        INNER JOIN match_executed me
+            ON op.order_uuid = me.order_uuid
+        INNER JOIN token_info ti
+            ON op.source_asset = ti.address
+        INNER JOIN coingecko_assets_list cal
+            ON op.source_asset = cal.address
+        INNER JOIN coingecko_market_data cmd 
+            ON cal.id = cmd.id
+        WHERE op.block_timestamp >= (
+                SELECT max_date - INTERVAL '1 day'
+                FROM latest_date
+            )
+          AND op.block_timestamp < (
+                SELECT max_date
+                FROM latest_date
+            )
+    ),
+    dest_volume_table_0 AS (
+        SELECT DISTINCT
+            op.*, 
+            ti.decimals AS dest_decimal,
+            cal.id AS dest_id,
+            cal.chain AS dest_chain,
+            cmd.current_price::FLOAT AS dest_price,
+            (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
+        FROM order_placed op
+        INNER JOIN match_executed me
+            ON op.order_uuid = me.order_uuid
+        INNER JOIN token_info ti
+            ON op.dest_asset = ti.address
+        INNER JOIN coingecko_assets_list cal
+            ON op.dest_asset = cal.address
+        INNER JOIN coingecko_market_data cmd 
+            ON cal.id = cmd.id
+        WHERE op.block_timestamp >= (
+                SELECT max_date - INTERVAL '1 day'
+                FROM latest_date
+            )
+          AND op.block_timestamp < (
+                SELECT max_date
+                FROM latest_date
+            )
+    ),
+    overall_volume_table_3 AS (
+        SELECT DISTINCT
+            svt.order_uuid AS order_id,
+            (dvt.dest_volume + svt.source_volume) AS total_volume,
+            svt.block_timestamp AS date,
+            svt.source_id AS source_asset,
+            dvt.dest_id AS dest_asset
+        FROM source_volume_table_0 svt
+        INNER JOIN dest_volume_table_0 dvt
+            ON svt.order_uuid = dvt.order_uuid
+    ),
+    source_volume_table AS (
+        SELECT DISTINCT
+            op.*, 
+            ti.decimals AS source_decimal,
+            cal.id AS source_id,
+            cal.chain AS source_chain,
+            cmd.current_price::FLOAT AS source_price,
+            (cmd.current_price::FLOAT * op.src_amount) / POWER(10, ti.decimals) AS source_volume
+        FROM mm_order_placed op
+        INNER JOIN mm_match_executed me
+            ON op.order_uuid = me.order_uuid
+        INNER JOIN token_info ti
+            ON op.src_asset_address = ti.address
+        INNER JOIN coingecko_assets_list cal
+            ON op.src_asset_address = cal.address
+        INNER JOIN coingecko_market_data cmd 
+            ON cal.id = cmd.id
+        WHERE op.created_at >= (
+                SELECT max_date - INTERVAL '1 day' 
+                FROM latest_date
+            )
+          AND op.created_at < (
+                SELECT max_date 
+                FROM latest_date
+            )
+    ),
+    overall_volume_table_2 AS (
+        SELECT DISTINCT
+            svt.order_uuid AS order_id,
+            2*svt.source_volume AS total_volume,
+            svt.created_at AS date,
+            svt.source_id AS source_asset,
+            '' AS dest_asset
+        FROM source_volume_table svt
+    ),
+    combined_volume_table AS (
+            SELECT DISTINCT
+                * 
+            FROM overall_volume_table_2
+            UNION
+            SELECT DISTINCT
+                * 
+            FROM overall_volume_table_3
+    ),
+    consolidated_volumes AS (
+    SELECT
+        id,
+        SUM(volume) AS total_volume
+    FROM (
+        SELECT
+            source_asset AS id,
+            SUM(total_volume) AS volume
+        FROM combined_volume_table
+        GROUP BY source_asset
+    ) combined
+    GROUP BY id
+    )
+    SELECT id
+    FROM consolidated_volumes
+    ORDER BY total_volume DESC
+
+    """
     
     # Execute the query and process results
-    asset_list = execute_sql(asset_query_2)
+    asset_list = execute_sql(asset_query_3)
     asset_list = pd.json_normalize(asset_list['result'])['id'].tolist()
     return asset_list
 
