@@ -368,93 +368,51 @@ if 1==1:
         """
     
         sql_query14 = f"""
-        WITH source_volume_table AS(
-      SELECT DISTINCT
-        op.*, 
-        ti.decimals as source_decimal,
-        cal.id as source_id,
-        cal.chain as source_chain,
-        cmd.current_price::FLOAT AS source_price,
-        (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-      FROM order_placed op
-      INNER JOIN match_executed me
-        ON op.order_uuid = me.order_uuid
-      INNER JOIN token_info ti
-        ON op.source_asset = ti.address  -- Get source asset decimals
-      INNER JOIN coingecko_assets_list cal
-        ON op.source_asset = cal.address
-      INNER JOIN coingecko_market_data cmd 
-        ON cal.id = cmd.id
-      WHERE op.block_timestamp >= '{sd}'
-    ),
-    dest_volume_table AS(
-    SELECT DISTINCT
-      op.*, 
-      ti.decimals as dest_decimal,
-      cal.id as dest_id,
-      cal.chain as dest_chain,
-      cmd.current_price::FLOAT AS dest_price,
-      (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-    FROM order_placed op
-    INNER JOIN match_executed me
-      ON op.order_uuid = me.order_uuid
-    INNER JOIN token_info ti
-      ON op.dest_asset = ti.address  -- Get source asset decimals
-    INNER JOIN coingecko_assets_list cal
-      ON op.dest_asset = cal.address
-    INNER JOIN coingecko_market_data cmd 
-      ON cal.id = cmd.id
-    WHERE op.block_timestamp >= '{sd}'
-    ),
-    overall_volume_table_2 AS(
-    SELECT DISTINCT
-      svt.*,
-      dvt.dest_id as dest_id,
-      dvt.dest_chain as dest_chain,
-      dvt.dest_decimal as dest_decimal,
-      dvt.dest_price as dest_price,
-      dvt.dest_volume as dest_volume,
-      (dvt.dest_volume + svt.source_volume) as total_volume
-    FROM source_volume_table svt
-    INNER JOIN dest_volume_table dvt
-      ON svt.order_uuid = dvt.order_uuid
-    ),
-    combined_address_trades AS (
-      SELECT 
-        sender_address AS address,
-        COUNT(*) AS trades
-      FROM overall_volume_table_2
-      GROUP BY sender_address
-    
-      UNION ALL
-    
-      SELECT 
-        filler_address AS address,
-        COUNT(*) AS trades
-      FROM overall_volume_table_2
-      GROUP BY filler_address
-    ),
-    user_trade_count AS (
-    SELECT 
-      address,
-      CAST(SUM(trades) AS INT) AS total_trades
-    FROM combined_address_trades
-    GROUP BY address
-    ORDER BY total_trades DESC
-    )
-    SELECT CAST(AVG(total_trades) AS INT) AS average_trades_per_user FROM user_trade_count
+        WITH combined_address_trades AS (
+          SELECT 
+            sender_address AS address,
+            COUNT(*) AS trades
+          FROM main_volume_table
+          WHERE block_timestamp >= '{sd}'
+          GROUP BY sender_address
+        
+          UNION ALL
+        
+          SELECT 
+            maker_address AS address,
+            COUNT(*) AS trades
+          FROM main_volume_table
+          WHERE block_timestamp >= '{sd}'
+          GROUP BY maker_address
+        ),
+        user_trade_count AS (
+        SELECT 
+          address,
+          CAST(SUM(trades) AS INT) AS total_trades
+        FROM combined_address_trades
+        GROUP BY address
+        ORDER BY total_trades DESC
+        )
+        SELECT CAST(AVG(total_trades) AS INT) AS average_trades_per_user FROM user_trade_count
         """
     
         sql_query15 = f"""
         WITH user_trade_counts AS (
             SELECT
-                op.sender_address AS address,
-                COUNT(op.order_uuid) AS trade_count
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
-            WHERE op.block_timestamp >= '{sd}'
-            GROUP BY op.sender_address
+                sender_address AS address,
+                COUNT(order_uuid) AS trade_count
+            FROM main_volume_table
+            WHERE block_timestamp >= '{sd}'
+            GROUP BY sender_address
+
+            UNION ALL
+
+            SELECT
+                maker_address AS address,
+                COUNT(order_uuid) AS trade_count
+            FROM main_volume_table
+            WHERE block_timestamp >= '{sd}'
+            GROUP BY maker_address
         )   
         SELECT
             CAST(
@@ -468,13 +426,21 @@ if 1==1:
             SELECT
                 op.sender_address AS address,
                 COUNT(op.order_uuid) AS trade_count
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
+            FROM main_volume_table op
             WHERE op.block_timestamp >= '{sd}'
             GROUP BY op.sender_address
+
+            UNION all
+
+            SELECT
+                op.maker_address AS address,
+                COUNT(op.order_uuid) AS trade_count
+            FROM main_volume_table op
+            WHERE op.block_timestamp >= '{sd}'
+            GROUP BY op.maker_address
+
         )   
-        SELECT COUNT(*) FROM user_trade_counts
+        SELECT * FROM user_trade_counts
         """
 
         sql_query17 = f"""
