@@ -1363,7 +1363,7 @@ def get_volume_vs_date(asset_id, sd):
         overall_volume_table_3 AS (
             SELECT DISTINCT
                 svt.order_uuid AS order_id,
-                2*svt.source_volume AS total_volume,
+                svt.source_volume AS total_volume,
                 svt.created_at AS date,
                 svt.source_id AS source_asset,
                 '' AS dest_asset
