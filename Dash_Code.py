@@ -2143,7 +2143,7 @@ with col2:
             if asset != 'Total': 
                 data = st.session_state["preloaded_2"][asset + ' Week Volume']
         
-                date = today - timedelta(days=7)
+                date = today - timedelta(days=6)
                 date = date.strftime('%Y-%m-%dT%H:%M:%S')
                 
                 data = data[pd.to_datetime(data['day']) > pd.to_datetime(date)]
