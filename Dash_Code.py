@@ -2032,6 +2032,7 @@ with col2:
 
     date = today - timedelta(days=7)
     date = date.strftime('%Y-%m-%dT%H:%M:%S')
+    st.write(date)
     
     data = data[pd.to_datetime(data['day']) > pd.to_datetime(date)]
 
