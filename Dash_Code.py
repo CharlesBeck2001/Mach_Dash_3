@@ -588,7 +588,7 @@ if 1==1:
     
         df_count_above = pd.json_normalize(df_count_above['result'])
     
-        count_above = df_count_above['count'].iloc[0]
+        count_above = df_count_above['trade_count'].iloc[0]
     
         if count_above == 0:
     
