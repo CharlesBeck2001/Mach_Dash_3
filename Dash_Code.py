@@ -252,12 +252,12 @@ if 1==1:
                     SELECT sender_address AS address
                     FROM main_volume_table
                     UNION
-                    SELECT filler_address AS address
+                    SELECT maker_address AS address
                     FROM main_volume_table
-                    WHERE main_volume_table.block_timestamp >= '2024-12-24T20:35:29'
+                    WHERE main_volume_table.block_timestamp >= '{sd}'
                 ) AS unique_addresses
         )
-        SELECT COUNT(unique_address_count) FROM user_list
+        SELECT * FROM user_list
         """
         
         sql_query9 = f"""
@@ -274,7 +274,7 @@ if 1==1:
             SELECT sender_address AS address, mvt.order_uuid AS order_id
             FROM main_volume_table mvt
             UNION ALL
-            SELECT filler_address AS address, mvt.order_uuid AS order_id
+            SELECT maker_address AS address, mvt.order_uuid AS order_id
             FROM main_volume_table mvt
             WHERE mvt.block_timestamp >= '{sd}'
         ) AS all_trades
@@ -284,71 +284,15 @@ if 1==1:
         """
         
         sql_query11 = f"""
-        WITH source_volume_table AS (
-        SELECT DISTINCT
-            op.order_uuid, 
-            op.source_quantity, 
-            op.source_asset,
-            op.sender_address,  -- Explicitly include sender_address
-            ti.decimals AS source_decimal,
-            cal.id AS source_id,
-            cal.chain AS source_chain,
-            cmd.current_price::FLOAT AS source_price,
-            (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-        FROM order_placed op
-        INNER JOIN match_executed me
-            ON op.order_uuid = me.order_uuid
-        INNER JOIN token_info ti
-            ON op.source_asset = ti.address
-        INNER JOIN coingecko_assets_list cal
-            ON op.source_asset = cal.address
-        INNER JOIN coingecko_market_data cmd 
-            ON cal.id = cmd.id
-        WHERE op.block_timestamp >= '{sd}'
-        ),
-        dest_volume_table AS (
-        SELECT DISTINCT
-            op.order_uuid, 
-            op.dest_quantity, 
-            op.dest_asset,
-            me.maker_address,  -- Explicitly include maker_address
-            ti.decimals AS dest_decimal,
-            cal.id AS dest_id,
-            cal.chain AS dest_chain,
-            cmd.current_price::FLOAT AS dest_price,
-            (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-        FROM order_placed op
-        INNER JOIN match_executed me
-            ON op.order_uuid = me.order_uuid
-        INNER JOIN token_info ti
-            ON op.dest_asset = ti.address
-        INNER JOIN coingecko_assets_list cal
-            ON op.dest_asset = cal.address
-        INNER JOIN coingecko_market_data cmd 
-            ON cal.id = cmd.id
-        WHERE op.block_timestamp >= '{sd}'
-        ),
-        overall_volume_table_2 AS (
-        SELECT DISTINCT
-            svt.order_uuid,
-            svt.sender_address,  -- Explicitly use sender_address here
-            dvt.maker_address,   -- Explicitly use maker_address here
-            svt.source_volume,
-            dvt.dest_volume,
-            (dvt.dest_volume + svt.source_volume) AS total_volume
-        FROM source_volume_table svt
-        INNER JOIN dest_volume_table dvt
-            ON svt.order_uuid = dvt.order_uuid
-        )
         SELECT 
             address,
             COALESCE(SUM(total_volume), 0) AS total_user_volume
         FROM (
             SELECT sender_address AS address, total_volume
-            FROM overall_volume_table_2
+            FROM main_volume_table
             UNION ALL
             SELECT maker_address AS address, total_volume
-            FROM overall_volume_table_2
+            FROM main_volume_table
         ) AS combined_addresses
         GROUP BY address
         ORDER BY total_user_volume DESC
@@ -363,14 +307,11 @@ if 1==1:
             COUNT(order_id) AS trade_count
         FROM (
             SELECT sender_address AS address, op.order_uuid AS order_id
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
+            FROM main_volume_table op
+            WHERE op.block_timestamp >= '{sd}'
             UNION ALL
             SELECT maker_address AS address, op.order_uuid AS order_id
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
+            FROM main_volume_table op
             WHERE op.block_timestamp >= '{sd}'
         ) AS all_trades
         GROUP BY address
@@ -391,72 +332,17 @@ if 1==1:
         """
     
         sql_query13 = f"""
-        WITH source_volume_table AS (
-        SELECT DISTINCT
-            op.order_uuid, 
-            op.source_quantity, 
-            op.source_asset,
-            op.sender_address,  
-            ti.decimals AS source_decimal,
-            cal.id AS source_id,
-            cal.chain AS source_chain,
-            cmd.current_price::FLOAT AS source_price,
-            (cmd.current_price::FLOAT * op.source_quantity) / POWER(10, ti.decimals) AS source_volume
-        FROM order_placed op
-        INNER JOIN match_executed me
-            ON op.order_uuid = me.order_uuid
-        INNER JOIN token_info ti
-            ON op.source_asset = ti.address
-        INNER JOIN coingecko_assets_list cal
-            ON op.source_asset = cal.address
-        INNER JOIN coingecko_market_data cmd 
-            ON cal.id = cmd.id
-        WHERE op.block_timestamp >= '{sd}'
-        ),
-        dest_volume_table AS (
-            SELECT DISTINCT
-                op.order_uuid, 
-                op.dest_quantity, 
-                op.dest_asset,
-                me.maker_address,  
-                ti.decimals AS dest_decimal,
-                cal.id AS dest_id,
-                cal.chain AS dest_chain,
-                cmd.current_price::FLOAT AS dest_price,
-                (cmd.current_price::FLOAT * op.dest_quantity) / POWER(10, ti.decimals) AS dest_volume
-            FROM order_placed op
-            INNER JOIN match_executed me
-                ON op.order_uuid = me.order_uuid
-            INNER JOIN token_info ti
-                ON op.dest_asset = ti.address
-            INNER JOIN coingecko_assets_list cal
-                ON op.dest_asset = cal.address
-            INNER JOIN coingecko_market_data cmd 
-                ON cal.id = cmd.id
-            WHERE op.block_timestamp >= '{sd}'
-        ),
-        overall_volume_table_2 AS (
-            SELECT DISTINCT
-                svt.order_uuid,
-                svt.sender_address,  
-                dvt.maker_address,   
-                svt.source_volume,
-                dvt.dest_volume,
-                (dvt.dest_volume + svt.source_volume) AS total_volume
-            FROM source_volume_table svt
-            INNER JOIN dest_volume_table dvt
-                ON svt.order_uuid = dvt.order_uuid
-        ),
-        total_volume_table AS (
+        WITH total_volume_table AS (
             SELECT 
                 address,
                 COALESCE(SUM(total_volume), 0) AS total_user_volume
             FROM (
                 SELECT sender_address AS address, total_volume
-                FROM overall_volume_table_2
+                FROM main_volume_table
                 UNION ALL
                 SELECT maker_address AS address, total_volume
-                FROM overall_volume_table_2
+                FROM main_volume_table mvt
+                WHERE mvt.block_timestamp >= '{sd}'
             ) AS combined_addresses
             GROUP BY address
         ),
