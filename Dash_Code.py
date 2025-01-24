@@ -3094,6 +3094,8 @@ def sankey_data(sd):
         SUM(dest_volume) AS total_dest_volume
     FROM 
         main_volume_table
+    WHERE
+        block_timestamp >= '{sd}'
     GROUP BY 
         source_chain, source_id, dest_chain, dest_id
     ORDER BY 
