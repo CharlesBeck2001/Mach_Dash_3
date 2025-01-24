@@ -228,7 +228,7 @@ if 1==1:
         SELECT 
             DATE(svt.block_timestamp) AS trade_date,
             COUNT(*) AS total_trades
-        FFROM main_volume_table svt
+        FROM main_volume_table svt
         WHERE svt.block_timestamp >= '{sd}'
         GROUP BY DATE(svt.block_timestamp)
         ORDER BY trade_date
@@ -631,7 +631,7 @@ if 1==1:
         }
     
         for key in dfs:
-            st.write(key)
+            #st.write(key)
             dfs[key] = pd.json_normalize(dfs[key]['result'])
     
         # Convert date columns explicitly to datetime
