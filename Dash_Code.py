@@ -1921,7 +1921,7 @@ def get_last_day(asset_id, sd):
         """
         
     #st.write(execute_sql(query))
-    return pd.json_normalize(execute_sql(query_2)['result'])
+    return pd.json_normalize(execute_sql(query_3)['result'])
 
 previous_day = today - timedelta(days=1)
 # Function to create the datetime object for the prior day
