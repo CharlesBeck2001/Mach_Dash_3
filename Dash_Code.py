@@ -735,7 +735,7 @@ sql_query18 = """
             FROM main_volume_table
         )
         SELECT 
-            2*SUM(total_volume) AS volume
+            SUM(total_volume) AS volume
         FROM main_volume_table
         WHERE block_timestamp >= (
             SELECT max_date - INTERVAL '1 day' 
