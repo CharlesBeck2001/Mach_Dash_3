@@ -3299,7 +3299,6 @@ else:
 
 time_ranges_6 = {
     "All Time": None,  # Special case for no date filter
-    "Last Week": 7,
     "Last Month": 30,
     "Last 3 Months": 90,
     "Last 6 Months": 180
@@ -3699,9 +3698,10 @@ def fill_time_builds(load):
 
     return
 
+day_list_2 = [30,90,180]
 if "preloaded_6" not in st.session_state:
     preloaded_6 = {}
-    for i in day_list:
+    for i in day_list_2:
         date = today - timedelta(days=i)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
         st.write(date)
