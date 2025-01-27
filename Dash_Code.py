@@ -3704,7 +3704,7 @@ if "preloaded_6" not in st.session_state:
     for i in day_list:
         date = today - timedelta(days=i)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
-    
+        st.write(date)
         data = fill_time_gather(date)
         preloaded_6[i] = data
     
