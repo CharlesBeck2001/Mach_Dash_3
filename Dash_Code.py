@@ -1750,8 +1750,8 @@ def get_last_day(asset_id, sd):
 
         query_3 = f"""
         WITH latest_date AS (
-            SELECT DATE_TRUNC('day', MAX(created_at)) AS max_date
-            FROM mm_order_placed
+            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
+            FROM main_volume_table
         )
         SELECT 
             TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
@@ -1900,8 +1900,8 @@ def get_last_day(asset_id, sd):
 
         query_3 = f"""
         WITH latest_date AS (
-            SELECT DATE_TRUNC('day', MAX(created_at)) AS max_date
-            FROM mm_order_placed
+            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
+            FROM main_volume_table
         )
         SELECT 
             TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
