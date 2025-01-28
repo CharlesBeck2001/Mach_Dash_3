@@ -2105,6 +2105,7 @@ with col1:
                 
     # Check for duplicates
     duplicates = all_assets_data_hour[all_assets_data_hour.duplicated(subset=['date', 'asset'], keep=False)]
+    st.write(duplicates)
     if not duplicates.empty:
         st.write("Duplicate Entries:", duplicates)
     
