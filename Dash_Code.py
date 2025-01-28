@@ -1935,16 +1935,16 @@ def get_last_day(asset_id, sd):
 
         query_3 = f"""
         SELECT 
-            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
+            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'), 'HH12 AM') AS hour,
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             'Total' AS asset
         FROM main_volume_table svt
         WHERE svt.block_timestamp >= (
-                NOW() - INTERVAL '24 hours'
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
             )
-        AND svt.block_timestamp < NOW()
-        GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
-        ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        AND svt.block_timestamp < (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
 
     #st.write(pd.json_normalize(execute_sql(query_3)['result']))
@@ -2027,7 +2027,7 @@ with col1:
     all_assets_data_hour = pd.DataFrame()
     data = st.session_state["preloaded_2"]["Total Hourly Value"]
 
-    st.write(data)
+    #st.write(data)
     data['date'] = assign_dates_to_df(data['hour'])
 
     # Apply the function to the 'hour' column
