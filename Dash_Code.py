@@ -1947,7 +1947,7 @@ def get_last_day(asset_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
         """
 
-    st.write(pd.json_normalize(execute_sql(query_3)['result']))
+    #st.write(pd.json_normalize(execute_sql(query_3)['result']))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
 # Assuming today is defined elsewhere
@@ -2028,15 +2028,16 @@ with col1:
     else:
         # Add the 'asset' column (asset name is already included in 'data')
         all_assets_data_hour = pd.concat([all_assets_data_hour, data])
-                
+    
     #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
     # Pivot the data to have separate columns for each asset
+    st.write(all_assets_data_hour)
     pivot_data = all_assets_data_hour.pivot(index='date', columns='asset', values='total_hourly_volume')
     pivot_data = pivot_data.fillna(0)
     pivot_data = pivot_data.reset_index()
     # Melt the data back into long format for Plotly
     
-    st.write(pivot_data)
+    
     melted_data = pivot_data.melt(id_vars=['date'], var_name='asset', value_name='total_hourly_volume')
 
     # Create an interactive bar chart with Plotly
