@@ -2000,8 +2000,7 @@ if "preloaded_2" not in st.session_state:
         week_vol = get_volume_vs_date('Total', date)
         preloaded_2[asset + ' Week Volume'] = week_vol
 
-st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
-    #st.session_state["preloaded_2"] = preloaded_
+    st.session_state["preloaded_2"] = preloaded_2
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
