@@ -2021,7 +2021,7 @@ with col1:
     data = st.session_state["preloaded_2"]['Total' + ' Hourly Value']
 
     # Apply the function to the 'hour' column
-    data['date'] = data['hour'].apply(create_prior_day_datetime)
+    #data['date'] = data['hour'].apply(create_prior_day_datetime)
     
     if data.empty:
         st.warning(f"No data available for {asset}!")
