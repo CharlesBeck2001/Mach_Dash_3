@@ -2096,7 +2096,7 @@ with col1:
     
                 # Apply the function to the 'hour' column
                 data['date'] = data['hour'].apply(create_prior_day_datetime)
-                st.write(data)
+                
                 if data.empty:
                     st.warning(f"No data available for {asset}!")
                 else:
@@ -2148,6 +2148,7 @@ with col1:
 
 
 with col2:
+    
     st.subheader("Volume In The Last Week Breakdown By Asset")
     all_assets_data_day = pd.DataFrame()
     
