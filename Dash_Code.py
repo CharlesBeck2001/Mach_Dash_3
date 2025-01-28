@@ -1758,7 +1758,7 @@ def get_last_day(asset_id, sd):
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE svt.source_id = '{asset_id}'
+        WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
         AND svt.block_timestamp >= (
             SELECT max_date - INTERVAL '1 day' 
             FROM latest_date
@@ -1919,7 +1919,8 @@ def get_last_day(asset_id, sd):
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
         """
-        
+
+    st.write(asset_id)
     #st.write(execute_sql(query))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
