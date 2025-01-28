@@ -2113,6 +2113,7 @@ with col2:
 
 col1, col2 = st.columns(2)
 
+'''
 selected_assets_hourly = st.multiselect("Select Assets", asset_list_day_2, default=asset_list_day_2[:4])
 
 col1, col2 = st.columns(2)
@@ -2238,6 +2239,7 @@ with col2:
 
 
 col1, col2 = st.columns(2)
+'''
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
