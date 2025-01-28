@@ -1920,7 +1920,7 @@ def get_last_day(asset_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
         """
 
-    st.write(asset_id)
+    #st.write(asset_id)
     #st.write(execute_sql(query))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
@@ -2118,6 +2118,7 @@ with col1:
     
     pivot_data = pivot_data.fillna(0)
     pivot_data = pivot_data.reset_index()
+    st.write(pivot_data)
     
     # Melt the data back into long format for Plotly
     melted_data = pivot_data.melt(id_vars=['date'], var_name='asset', value_name='total_hourly_volume')
