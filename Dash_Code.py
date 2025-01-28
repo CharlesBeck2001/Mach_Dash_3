@@ -2003,7 +2003,7 @@ if "preloaded_2" not in st.session_state:
 
     st.session_state["preloaded_2"] = preloaded_2
     
-    st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
+    #st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
@@ -2022,7 +2022,7 @@ with col1:
 
     # Apply the function to the 'hour' column
     data['date'] = data['hour'].apply(create_prior_day_datetime)
-
+    st.write(data)
     if data.empty:
         st.warning(f"No data available for {asset}!")
     else:
