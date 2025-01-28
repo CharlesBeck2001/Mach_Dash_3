@@ -1146,31 +1146,19 @@ def get_volume_vs_date(asset_id, sd):
         """
 
         query_3 = f"""
-         WITH latest_date AS (
-            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
-            FROM main_volume_table
-        )
-        SELECT 
-            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
+         SELECT 
+            TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
             COALESCE(SUM(
                 CASE 
                     WHEN svt.source_id = '{asset_id}' AND svt.dest_id = '{asset_id}' THEN svt.total_volume / 2
                     ELSE svt.total_volume
                 END
-            ), 0) AS total_hourly_volume,
+            ), 0) AS total_daily_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE (svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}')
-        AND svt.block_timestamp >= (
-            SELECT max_date - INTERVAL '1 day' 
-            FROM latest_date
-        )
-        AND svt.block_timestamp < (
-            SELECT max_date 
-            FROM latest_date
-        )
-        GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
-        ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
+        GROUP BY DATE_TRUNC('day', svt.block_timestamp)
+        ORDER BY DATE_TRUNC('day', svt.block_timestamp);
         """
         
     else:
@@ -1279,29 +1267,17 @@ def get_volume_vs_date(asset_id, sd):
         """
 
         query_3 = f"""
-         WITH latest_date AS (
-            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
-            FROM main_volume_table
-        )
         SELECT 
-            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
-            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
+            COALESCE(SUM(svt.total_volume), 0) AS total_daily_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE svt.block_timestamp >= (
-            SELECT max_date - INTERVAL '1 day' 
-            FROM latest_date
-        )
-        AND svt.block_timestamp < (
-            SELECT max_date 
-            FROM latest_date
-        )
-        GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
-        ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        GROUP BY DATE_TRUNC('day', svt.block_timestamp)
+        ORDER BY DATE_TRUNC('day', svt.block_timestamp)
         """
 
     # Execute the query and return the result as a DataFrame
-    return pd.json_normalize(execute_sql(query_2)['result'])
+    return pd.json_normalize(execute_sql(query_3)['result'])
 
 @st.cache_data
 def get_weekly_volume_vs_date(asset_id, sd):
