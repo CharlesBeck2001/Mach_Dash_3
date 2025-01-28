@@ -1983,7 +1983,7 @@ if "preloaded_2" not in st.session_state:
 
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
-        st.write(st.session_state["preloaded_2"][asset + ' Hourly Value'])
+        st.write(preloaded_2[asset + ' Hourly Value'])
     
         date = today - timedelta(days=6)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
