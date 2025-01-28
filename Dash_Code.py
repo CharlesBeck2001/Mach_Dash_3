@@ -2103,7 +2103,14 @@ with col1:
                     # Add the 'asset' column (asset name is already included in 'data')
                     all_assets_data_hour = pd.concat([all_assets_data_hour, data])
                 
-    #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
+    # Check for duplicates
+    duplicates = all_assets_data_hour[all_assets_data_hour.duplicated(subset=['date', 'asset'], keep=False)]
+    if not duplicates.empty:
+        st.write("Duplicate Entries:", duplicates)
+    
+    # Aggregate duplicate rows by averaging
+    all_assets_data_hour = all_assets_data_hour.groupby(['date', 'asset'], as_index=False).mean()
+    
     # Pivot the data to have separate columns for each asset
     st.write(all_assets_data_hour)
     pivot_data = all_assets_data_hour.pivot(index='date', columns='asset', values='total_hourly_volume')
