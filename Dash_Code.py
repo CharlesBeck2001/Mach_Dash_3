@@ -2033,6 +2033,7 @@ with col1:
     # Pivot the data to have separate columns for each asset
     st.write(all_assets_data_hour)
     pivot_data = all_assets_data_hour.pivot(index='date', columns='asset', values='total_hourly_volume')
+    st.write(pivot_data)
     pivot_data = pivot_data.fillna(0)
     pivot_data = pivot_data.reset_index()
     # Melt the data back into long format for Plotly
