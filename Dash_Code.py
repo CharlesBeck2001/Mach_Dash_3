@@ -1998,9 +1998,9 @@ if "preloaded_2" not in st.session_state:
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
         
         week_vol = get_volume_vs_date('Total', date)
-        preloaded_2['Total' + ' Week Volume'] = week_vol
+        preloaded_2[asset + ' Week Volume'] = week_vol
 
-    
+st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
     #st.session_state["preloaded_2"] = preloaded_
 
 time_ranges_2 = {
