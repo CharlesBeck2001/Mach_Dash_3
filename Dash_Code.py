@@ -1946,7 +1946,7 @@ def get_last_day(asset_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
 
-    #st.write(pd.json_normalize(execute_sql(query_3)['result']))
+    st.write(pd.json_normalize(execute_sql(query_3)['result']))
     #st.write(execute_sql(query))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
