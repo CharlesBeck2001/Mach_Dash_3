@@ -1934,7 +1934,7 @@ def get_last_day(asset_id, sd):
 
         query_3 = f"""
         WITH latest_date AS (
-            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
+            SELECT DATE_TRUNC('hour', MAX(block_timestamp)) AS max_hour
             FROM main_volume_table
         )
         SELECT 
@@ -1943,13 +1943,13 @@ def get_last_day(asset_id, sd):
             '{asset_id}' AS asset
         FROM main_volume_table svt
         WHERE svt.block_timestamp >= (
-            SELECT max_date - INTERVAL '1 day' 
-            FROM latest_date
-        )
+                SELECT max_hour - INTERVAL '24 hours' 
+                FROM latest_date
+            )
         AND svt.block_timestamp < (
-            SELECT max_date 
-            FROM latest_date
-        )
+                SELECT max_hour 
+                FROM latest_date
+            )
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
         """
