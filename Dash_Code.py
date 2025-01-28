@@ -1953,16 +1953,13 @@ def get_last_day(asset_id, sd):
 # Assuming today is already defined
 today = datetime.today()
 
-def assign_dates_to_hours(hour_list):
-    """
-    Assigns dates to a list of hours (in AM/PM format) assuming transitions
-    between PM to AM flip from yesterday to today.
-    """
+def assign_dates_to_df(hours_series):
+
     assigned_dates = []
     current_date = today - timedelta(days=1)  # Start with "yesterday"
     prev_time = None  # To track the previous time
     
-    for hour_str in hour_list:
+    for hour_str in hours_series:
         # Parse the hour string into a time object
         current_time = datetime.strptime(hour_str, "%I %p").time()
 
