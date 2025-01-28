@@ -1749,7 +1749,7 @@ def get_last_day(asset_id, sd):
         """
 
         query_3 = f"""
-        WITH latest_date AS (
+       WITH latest_date AS (
             SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
             FROM main_volume_table
         )
@@ -1758,8 +1758,7 @@ def get_last_day(asset_id, sd):
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE (svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}')
-        AND svt.block_timestamp >= (
+        WHERE svt.block_timestamp >= (
             SELECT max_date - INTERVAL '1 day' 
             FROM latest_date
         )
