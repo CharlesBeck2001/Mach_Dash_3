@@ -1983,6 +1983,7 @@ if "preloaded_2" not in st.session_state:
 
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
+        st.write(st.session_state["preloaded_2"][asset + ' Hourly Value'])
     
         date = today - timedelta(days=6)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
@@ -1993,7 +1994,6 @@ if "preloaded_2" not in st.session_state:
     
     st.session_state["preloaded_2"] = preloaded_2
 
-st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
     "Last Month": 30,
