@@ -1276,6 +1276,7 @@ def get_volume_vs_date(asset_id, sd):
         ORDER BY DATE_TRUNC('day', svt.block_timestamp)
         """
 
+    st.write(asset_id)
     # Execute the query and return the result as a DataFrame
     return pd.json_normalize(execute_sql(query_3)['result'])
 
