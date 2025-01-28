@@ -1998,11 +1998,11 @@ if "preloaded_2" not in st.session_state:
         date = today - timedelta(days=6)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
         
-        week_vol = get_volume_vs_date('Total', date)
+        week_vol = get_volume_vs_date(asset, date)
         preloaded_2[asset + ' Week Volume'] = week_vol
 
     st.session_state["preloaded_2"] = preloaded_2
-    st.write(st.session_state["preloaded_2"]['Total' + ' Week Volume'])
+    st.write(st.session_state["preloaded_2"]['Total' + ' Daily Value'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
