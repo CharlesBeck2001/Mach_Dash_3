@@ -2055,7 +2055,7 @@ with col2:
     all_assets_data_day = pd.DataFrame()
     
     # Process individual assets
-            
+    st.write(all_assets_data_day)
     data = st.session_state["preloaded_2"]['Total' + ' Week Volume']
 
     date = today - timedelta(days=6)
