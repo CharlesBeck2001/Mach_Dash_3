@@ -1953,20 +1953,20 @@ def get_last_day(asset_id, sd):
 # Assuming today is defined elsewhere
 today = datetime.today()
 
-# Function to create the datetime object for the prior day or today, depending on AM/PM
-def create_prior_day_datetime(hour_str):
-    # Convert the string (e.g., "01 PM") to a time object
-    time_obj = datetime.strptime(hour_str, "%I %p").time()  
+# Function to create the datetime object for the prior day or today, depending on AM/PM and transitions
+def create_prior_day_datetime(hour_str, prev_datetime=None):
     
-    # Determine if the hour is AM or PM
-    if "AM" in hour_str:
-        # If AM, it's today
-        return datetime.combine(today.date(), time_obj)
-    else:
-        # If PM, it's yesterday
-        previous_day = today - timedelta(days=1)
-        return datetime.combine(previous_day.date(), time_obj)
+    # Convert hour_str (e.g., "01 PM") to a time object
+    time_obj = datetime.strptime(hour_str, "%I %p").time()
+    current_datetime = datetime.combine(today.date(), time_obj)
 
+    # Adjust for transitions based on the previous datetime
+    if prev_datetime:
+        if current_datetime > prev_datetime:
+            # If the current time appears earlier but represents the same day, subtract a day
+            current_datetime -= timedelta(days=1)
+
+    return current_datetime
 
 asset_list = asset_fetch()
 asset_list = asset_list[:15]
@@ -2012,16 +2012,25 @@ time_ranges_2 = {
     "Last 6 Months": 180
 }
 
+prev_datetime = None
+
+def apply_datetime_conversion(row):
+    global prev_datetime  # To keep track of the previous time during iteration
+    converted_datetime = create_prior_day_datetime(row['hour'], prev_datetime)
+    prev_datetime = converted_datetime  # Update the tracker
+    return converted_datetime
+
+
 col1, col2 = st.columns(2)
 with col1:
-    
+
     st.subheader("Volume By Hour During The Previous Day")
     all_assets_data_hour = pd.DataFrame()
     
     data = st.session_state["preloaded_2"]['Total' + ' Hourly Value']
 
     # Apply the function to the 'hour' column
-    data['date'] = data['hour'].apply(create_prior_day_datetime)
+    data['date'] = data['hour'].apply(apply_datetime_conversion)
     
     if data.empty:
         st.warning(f"No data available for {asset}!")
