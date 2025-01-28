@@ -1950,23 +1950,31 @@ def get_last_day(asset_id, sd):
     #st.write(pd.json_normalize(execute_sql(query_3)['result']))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
-# Assuming today is defined elsewhere
+# Assuming today is already defined
 today = datetime.today()
 
-# Function to create the datetime object for the prior day or today, depending on AM/PM and transitions
-def create_prior_day_datetime(hour_str, prev_datetime=None):
+def assign_dates_to_hours(hour_list):
+    """
+    Assigns dates to a list of hours (in AM/PM format) assuming transitions
+    between PM to AM flip from yesterday to today.
+    """
+    assigned_dates = []
+    current_date = today - timedelta(days=1)  # Start with "yesterday"
+    prev_time = None  # To track the previous time
     
-    # Convert hour_str (e.g., "01 PM") to a time object
-    time_obj = datetime.strptime(hour_str, "%I %p").time()
-    current_datetime = datetime.combine(today.date(), time_obj)
+    for hour_str in hour_list:
+        # Parse the hour string into a time object
+        current_time = datetime.strptime(hour_str, "%I %p").time()
 
-    # Adjust for transitions based on the previous datetime
-    if prev_datetime:
-        if current_datetime > prev_datetime:
-            # If the current time appears earlier but represents the same day, subtract a day
-            current_datetime -= timedelta(days=1)
+        # If it's a transition from PM to AM, increment the date
+        if prev_time and current_time < prev_time:
+            current_date += timedelta(days=1)
 
-    return current_datetime
+        # Combine the current date with the parsed time and store it
+        assigned_dates.append(datetime.combine(current_date, current_time))
+        prev_time = current_time  # Update the previous time tracker
+
+    return assigned_dates
 
 asset_list = asset_fetch()
 asset_list = asset_list[:15]
@@ -2014,13 +2022,6 @@ time_ranges_2 = {
 
 prev_datetime = None
 
-# Apply the function to the 'hour' column
-def apply_datetime_conversion(hour_str):
-    global prev_datetime  # To keep track of the previous time during iteration
-    converted_datetime = create_prior_day_datetime(hour_str, prev_datetime)
-    prev_datetime = converted_datetime  # Update the tracker
-    return converted_datetime
-
 
 col1, col2 = st.columns(2)
 with col1:
@@ -2028,10 +2029,10 @@ with col1:
     st.subheader("Volume By Hour During The Previous Day")
     all_assets_data_hour = pd.DataFrame()
     
-    data = st.session_state["preloaded_2"]['Total' + ' Hourly Value']
+    data['date'] = assign_dates_to_df(data['hour'])
 
     # Apply the function to the 'hour' column
-    data['date'] = data['hour'].apply(apply_datetime_conversion)
+    #data['date'] = data['hour'].apply(apply_datetime_conversion)
     
     if data.empty:
         st.warning(f"No data available for {asset}!")
