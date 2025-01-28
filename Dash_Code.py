@@ -2025,7 +2025,8 @@ with col1:
 
     st.subheader("Volume By Hour During The Previous Day")
     all_assets_data_hour = pd.DataFrame()
-    
+
+    st.write(data)
     data['date'] = assign_dates_to_df(data['hour'])
 
     # Apply the function to the 'hour' column
