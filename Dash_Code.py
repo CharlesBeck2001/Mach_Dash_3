@@ -1641,7 +1641,7 @@ def get_weekly_volume_vs_date(asset_id, sd):
         FROM weekly_averaged_volume_table
         ORDER BY day
         """
-    st.write(pd.json_normalize(execute_sql(query_2)['result']))
+        st.write(pd.json_normalize(execute_sql(query_2)['result']))
     # Execute the query and return the result as a DataFrame
     return pd.json_normalize(execute_sql(query_2)['result'])
 
@@ -2002,6 +2002,7 @@ if "preloaded_2" not in st.session_state:
         preloaded_2[asset + ' Week Volume'] = week_vol
 
     st.session_state["preloaded_2"] = preloaded_2
+    st.write(st.session_state["preloaded_2"][['Total' + ' Week Volume'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
