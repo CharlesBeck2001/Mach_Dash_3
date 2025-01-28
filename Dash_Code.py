@@ -1946,7 +1946,6 @@ def get_last_day(asset_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
 
-    st.write(pd.json_normalize(execute_sql(query_3)['result']))
     #st.write(execute_sql(query))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
@@ -1983,7 +1982,6 @@ if "preloaded_2" not in st.session_state:
 
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
-        st.write(preloaded_2[asset + ' Hourly Value'])
     
         date = today - timedelta(days=6)
         date = date.strftime('%Y-%m-%dT%H:%M:%S')
@@ -1993,6 +1991,7 @@ if "preloaded_2" not in st.session_state:
 
     
     st.session_state["preloaded_2"] = preloaded_2
+    st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
