@@ -2014,9 +2014,10 @@ time_ranges_2 = {
 
 prev_datetime = None
 
-def apply_datetime_conversion(row):
+# Apply the function to the 'hour' column
+def apply_datetime_conversion(hour_str):
     global prev_datetime  # To keep track of the previous time during iteration
-    converted_datetime = create_prior_day_datetime(row['hour'], prev_datetime)
+    converted_datetime = create_prior_day_datetime(hour_str, prev_datetime)
     prev_datetime = converted_datetime  # Update the tracker
     return converted_datetime
 
