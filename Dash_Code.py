@@ -1971,24 +1971,24 @@ asset_list_day = ['Total'] + asset_list_day
 
 if "preloaded_2" not in st.session_state:
     preloaded_2 = {}
-    #for asset in asset_list:
+    for asset in asset_list:
         
-    daily_vol = get_volume_vs_date('Total', time_point['oldest_time'][0])
-    weekly_vol = get_weekly_volume_vs_date('Total', time_point['oldest_time'][0])
+        daily_vol = get_volume_vs_date(asset, time_point['oldest_time'][0])
+        weekly_vol = get_weekly_volume_vs_date(asset, time_point['oldest_time'][0])
     
-    preloaded_2['Total' + ' Weekly Average'] = weekly_vol
-    preloaded_2['Total' + ' Daily Value'] = daily_vol
+        preloaded_2[asset + ' Weekly Average'] = weekly_vol
+        preloaded_2[asset + ' Daily Value'] = daily_vol
 
-#for asset in asset_list_day:
+    for asset in asset_list_day:
 
-    hourly_vol = get_last_day('Total', time_point['oldest_time'][0])
-    preloaded_2['Total' + ' Hourly Value'] = hourly_vol
-
-    date = today - timedelta(days=6)
-    date = date.strftime('%Y-%m-%dT%H:%M:%S')
+        hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
+        preloaded_2[asset + ' Hourly Value'] = hourly_vol
     
-    week_vol = get_volume_vs_date('Total', date)
-    preloaded_2['Total' + ' Week Volume'] = week_vol
+        date = today - timedelta(days=6)
+        date = date.strftime('%Y-%m-%dT%H:%M:%S')
+        
+        week_vol = get_volume_vs_date('Total', date)
+        preloaded_2['Total' + ' Week Volume'] = week_vol
 
     
     st.session_state["preloaded_2"] = preloaded_2
