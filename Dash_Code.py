@@ -2022,7 +2022,7 @@ with col1:
 
     # Apply the function to the 'hour' column
     data['date'] = data['hour'].apply(create_prior_day_datetime)
-    st.write(data)
+    
     if data.empty:
         st.warning(f"No data available for {asset}!")
     else:
@@ -2035,6 +2035,8 @@ with col1:
     pivot_data = pivot_data.fillna(0)
     pivot_data = pivot_data.reset_index()
     # Melt the data back into long format for Plotly
+    
+    st.write(pivot_data)
     melted_data = pivot_data.melt(id_vars=['date'], var_name='asset', value_name='total_hourly_volume')
 
     # Create an interactive bar chart with Plotly
