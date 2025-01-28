@@ -1758,7 +1758,7 @@ def get_last_day(asset_id, sd):
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
+        WHERE (svt.source_id = 'usd-coin' OR svt.dest_id = 'usd-coin')
         AND svt.block_timestamp >= (
             SELECT max_date - INTERVAL '1 day' 
             FROM latest_date
@@ -2104,16 +2104,16 @@ with col1:
                     all_assets_data_hour = pd.concat([all_assets_data_hour, data])
                 
     # Check for duplicates
-    duplicates = all_assets_data_hour[all_assets_data_hour.duplicated(subset=['date', 'asset'], keep=False)]
-    st.write(duplicates)
-    if not duplicates.empty:
-        st.write("Duplicate Entries:", duplicates)
+    #duplicates = all_assets_data_hour[all_assets_data_hour.duplicated(subset=['date', 'asset'], keep=False)]
+    #st.write(duplicates)
+    #if not duplicates.empty:
+    #    st.write("Duplicate Entries:", duplicates)
     
     # Aggregate duplicate rows by averaging
     all_assets_data_hour = all_assets_data_hour.groupby(['date', 'asset'], as_index=False).mean()
     
     # Pivot the data to have separate columns for each asset
-    st.write(all_assets_data_hour)
+    #st.write(all_assets_data_hour)
     pivot_data = all_assets_data_hour.pivot(index='date', columns='asset', values='total_hourly_volume')
     
     pivot_data = pivot_data.fillna(0)
