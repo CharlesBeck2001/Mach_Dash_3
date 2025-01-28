@@ -2096,7 +2096,7 @@ with col1:
     
                 # Apply the function to the 'hour' column
                 data['date'] = data['hour'].apply(create_prior_day_datetime)
-        
+                st.write(data)
                 if data.empty:
                     st.warning(f"No data available for {asset}!")
                 else:
@@ -2108,6 +2108,7 @@ with col1:
     #st.write(duplicates)
     #if not duplicates.empty:
     #    st.write("Duplicate Entries:", duplicates)
+
     
     # Aggregate duplicate rows by averaging
     all_assets_data_hour = all_assets_data_hour.groupby(['date', 'asset'], as_index=False).mean()
