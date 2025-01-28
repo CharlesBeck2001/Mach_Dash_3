@@ -1949,11 +1949,22 @@ def get_last_day(asset_id, sd):
     #st.write(execute_sql(query))
     return pd.json_normalize(execute_sql(query_3)['result'])
 
-previous_day = today - timedelta(days=1)
-# Function to create the datetime object for the prior day
+# Assuming today is defined elsewhere
+today = datetime.today()
+
+# Function to create the datetime object for the prior day or today, depending on AM/PM
 def create_prior_day_datetime(hour_str):
-    time_obj = datetime.strptime(hour_str, "%I %p").time()  # Convert "01 PM" to time object
-    return datetime.combine(previous_day.date(), time_obj)  # Combine with the prior day's date
+    # Convert the string (e.g., "01 PM") to a time object
+    time_obj = datetime.strptime(hour_str, "%I %p").time()  
+    
+    # Determine if the hour is AM or PM
+    if "AM" in hour_str:
+        # If AM, it's today
+        return datetime.combine(today.date(), time_obj)
+    else:
+        # If PM, it's yesterday
+        previous_day = today - timedelta(days=1)
+        return datetime.combine(previous_day.date(), time_obj)
 
 
 asset_list = asset_fetch()
@@ -1990,8 +2001,7 @@ if "preloaded_2" not in st.session_state:
         preloaded_2['Total' + ' Week Volume'] = week_vol
 
     
-    st.session_state["preloaded_2"] = preloaded_2
-    st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
+    #st.session_state["preloaded_2"] = preloaded_
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
