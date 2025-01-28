@@ -1158,7 +1158,7 @@ def get_volume_vs_date(asset_id, sd):
         FROM main_volume_table svt
         WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
         GROUP BY DATE_TRUNC('day', svt.block_timestamp)
-        ORDER BY DATE_TRUNC('day', svt.block_timestamp);
+        ORDER BY DATE_TRUNC('day', svt.block_timestamp)
         """
         
     else:
