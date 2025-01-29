@@ -23,6 +23,9 @@ st.set_page_config(
     layout="wide"                   # Optional: Adjusts layout
 )
 
+st.cache_data.clear()
+st.cache_resource.clear()
+
 @st.cache_data
 def execute_sql(query):
     headers = {
