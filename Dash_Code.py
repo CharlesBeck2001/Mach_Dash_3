@@ -799,6 +799,38 @@ st.title("Volume Analysis")
 #today = datetime.now()
 
 @st.cache_data
+def chain_fetch():
+    chain_query = f"""
+    WITH consolidated_volumes AS (
+    SELECT
+        chain,
+        SUM(volume) AS total_volume
+    FROM (
+        SELECT
+            source_chain AS chain,
+            SUM(source_volume) AS volume
+        FROM main_volume_table
+        GROUP BY source_chain
+        UNION ALL
+        SELECT
+            dest_chain AS chain,
+            SUM(dest_volume) AS volume
+        FROM main_volume_table
+        GROUP BY dest_chain
+    ) combined
+    GROUP BY chain
+    )
+    SELECT chain
+    FROM consolidated_volumes
+    WHERE chain <> ''
+    ORDER BY total_volume DESC
+    """
+    
+    chain_list = execute_sql(chain_query)
+    chain_list = pd.json_normalize(chain_list['result'])['chain'].tolist()
+    return(chain_list)
+
+@st.cache_data
 def asset_fetch():
     asset_query = f"""
     WITH consolidated_volumes AS (
@@ -1028,6 +1060,41 @@ def asset_fetch_day():
     asset_list = execute_sql(asset_query)
     asset_list = pd.json_normalize(asset_list['result'])['id'].tolist()
     return asset_list
+
+@st.cache_data
+def get_volume_vs_date_chain(chain_id, sd):
+
+    if chain_id != 'Total':
+
+        query = f"""
+        SELECT 
+            TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_id = 'solana' AND svt.dest_id = 'solana' THEN svt.total_volume / 2
+                    ELSE svt.total_volume
+                END
+            ), 0) AS total_daily_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}'
+        GROUP BY DATE_TRUNC('day', svt.block_timestamp)
+        ORDER BY DATE_TRUNC('day', svt.block_timestamp)
+        """
+
+    else:
+
+        query = f"""
+        SELECT 
+            TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
+            COALESCE(SUM(svt.total_volume), 0) AS total_daily_volume,
+            'Total' AS chain
+        FROM main_volume_table svt
+        GROUP BY DATE_TRUNC('day', svt.block_timestamp)
+        ORDER BY DATE_TRUNC('day', svt.block_timestamp)
+        """
+
+    return pd.json_normalize(execute_sql(query)['result'])
 
 # Function to execute query and retrieve data
 @st.cache_data
@@ -1649,6 +1716,57 @@ def get_weekly_volume_vs_date(asset_id, sd):
     return pd.json_normalize(execute_sql(query_2)['result'])
 
 
+def get_last_day_chain(chain_id, sd):
+
+    if chain_id != 'Total':
+
+        query = f"""
+       WITH latest_date AS (
+            SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
+            FROM main_volume_table
+        )
+        SELECT 
+            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp), 'HH12 AM') AS hour,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' THEN svt.total_volume / 2
+                    ELSE svt.total_volume
+                END
+            ), 0) AS total_hourly_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE (svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}')
+        AND svt.block_timestamp >= (
+            SELECT max_date - INTERVAL '1 day' 
+            FROM latest_date
+        )
+        AND svt.block_timestamp < (
+            SELECT max_date 
+            FROM latest_date
+        )
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        """
+    
+    else:
+
+        query = f"""
+        SELECT 
+            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'), 'HH12 AM') AS hour,
+            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE svt.block_timestamp >= (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+            )
+        AND svt.block_timestamp < (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        """
+
+    return pd.json_normalize(execute_sql(query)['result'])
+        
+
 def get_last_day(asset_id, sd):
 
     if asset_id != 'Total':
@@ -2258,6 +2376,22 @@ with col2:
 
 col1, col2 = st.columns(2)
 '''
+
+
+time_ranges_chain = {
+    "Day" : None,
+    "Week": 7,
+    "Month": 30
+}
+chain_list = chain_fetch()
+chain_list = ['Total'] + chain_list
+
+selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
+selected_chain = st.selectbox("Select a chain for the chain display:", chain_list, default = 'Total')
+
+if selected_range_chain not None:
+
+    
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
