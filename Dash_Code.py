@@ -2386,11 +2386,38 @@ time_ranges_chain = {
 chain_list = chain_fetch()
 chain_list = ['Total'] + chain_list
 
+chain_number_list = [7,30]
+if "preloaded_chain" not in st.session_state:
+    preloaded_chain = {}
+    for chain in chain_list:
+        
+        daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
+        chain_vol = get_volume_vs_date_chain(chain_id, time_point['oldest_time'][0])
+
+        preloaded_chain[chain + " Day Volume"] = daily_vol_ch
+        preloaded_chain[chain + " Volume Data"] = chain_vol
+
+    st.session_state["preloaded_chain"] = preloaded_chain
+    
+
 selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
 selected_chain = st.selectbox("Select a chain for the chain display:", chain_list, default = 'Total')
 
+
+
 if selected_range_chain not None:
 
+    st.write(st.session_state["preloaded_chain"][selected_chain + " Day Volume"])
+
+else:
+
+    data = st.session_state["preloaded_chain"][selected_chain + " Volume Data"]
+    date = today - timedelta(days=selected_range_chain)
+    date = date.strftime('%Y-%m-%dT%H:%M:%S')
+    
+    
+    data = data[pd.to_datetime(data['day']) > pd.to_datetime(date)]
+    st.write(data)
     
 
 time_ranges_2 = {
