@@ -2405,7 +2405,7 @@ selected_chain = st.selectbox("Select a chain for the chain display:", chain_lis
 
 
 
-if selected_range_chain not None:
+if selected_range_chain is not None:
 
     st.write(st.session_state["preloaded_chain"][selected_chain + " Day Volume"])
 
