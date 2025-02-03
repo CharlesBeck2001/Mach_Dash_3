@@ -1163,7 +1163,7 @@ def get_volume_vs_date_chain(chain_id, sd):
             TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
             COALESCE(SUM(
                 CASE 
-                    WHEN svt.source_id = 'solana' AND svt.dest_id = 'solana' THEN svt.total_volume / 2
+                    WHEN svt.source_id = '{chain_id}' AND svt.dest_id = '{chain_id}' THEN svt.total_volume / 2
                     ELSE svt.total_volume
                 END
             ), 0) AS total_daily_volume,
