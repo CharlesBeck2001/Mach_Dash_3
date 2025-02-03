@@ -2384,7 +2384,7 @@ time_ranges_chain = {
     "Month": 30
 }
 chain_list = chain_fetch()
-#chain_list = chain_list[:11]
+chain_list = chain_list[:8]
 chain_list = ['Total'] + chain_list
 
 chain_number_list = [7,30]
