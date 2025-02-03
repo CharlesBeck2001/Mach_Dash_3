@@ -2419,10 +2419,12 @@ time_ranges_chain = {
     "Month": 30
 }
 chain_list = chain_fetch()
+chain_list_def = chain_list
 #chain_list = chain_list[:8]
 chain_list = ['Total'] + chain_list
 
 chain_list_day = chain_fetch_day()
+chain_list_day_def = chain_list_day
 
 chain_list_day = ['Total']+ chain_list_day
 
@@ -2557,7 +2559,7 @@ if time_ranges_chain[selected_range_chain] is not None:
     # -------------------------------
     data_list = []
     # Loop through every chain to get its volume data
-    for chain in chain_list:
+    for chain in chain_list_def:
         chain_data = st.session_state["preloaded_chain"][chain + " Volume Data"].copy()
         # Define the cutoff date based on the selected range
         date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
@@ -2608,7 +2610,7 @@ else:
     # -------------------------------
     data_list = []
     # Loop through every chain in the day list
-    for chain in chain_list_day:
+    for chain in chain_list_day_def:
         chain_data = st.session_state["preloaded_chain"][chain + " Day Volume"].copy()
         if not chain_data.empty:
             # Compute a new 'date' column from the 'hour' column
