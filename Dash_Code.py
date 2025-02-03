@@ -1919,7 +1919,17 @@ def get_last_day_chain(chain_id, sd):
                 DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'),
                 'HH12 AM'
             ) AS hour,
-            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                        THEN svt.total_volume  -- Entire volume is counted once
+                    WHEN svt.source_chain = '{chain_id}' 
+                        THEN svt.source_volume  -- Only count source volume
+                    WHEN svt.dest_chain = '{chain_id}' 
+                        THEN svt.dest_volume  -- Only count destination volume
+                    ELSE 0
+                END
+            ), 0) AS total_hourly_volume,
             '{chain_id}' AS chain
         FROM main_volume_table svt
         WHERE (svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}')
