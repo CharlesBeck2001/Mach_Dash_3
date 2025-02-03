@@ -2448,7 +2448,7 @@ if "preloaded_chain" not in st.session_state:
     
 
 selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
-selected_chain = st.selectbox("Select a chain for the chain display:", chain_list, default = 'Total')
+selected_chain = st.selectbox("Select a chain for the chain display:", chain_list)
 
 
 
