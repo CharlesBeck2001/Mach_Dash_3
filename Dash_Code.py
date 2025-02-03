@@ -1872,7 +1872,7 @@ def get_last_day_chain(chain_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
 
-        query = f"""
+        query_1 = f"""
         SELECT 
             TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'), 'HH12 AM') AS hour,
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
@@ -1883,6 +1883,32 @@ def get_last_day_chain(chain_id, sd):
                 NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
             )
         AND svt.block_timestamp < (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        """
+
+        query = f"""
+        SELECT 
+            TO_CHAR(
+                DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'),
+                'HH12 AM'
+            ) AS hour,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_id = '{chain_id}' AND svt.dest_id = '{chain_id}' 
+                        THEN svt.total_volume / 2
+                    ELSE svt.total_volume
+                END
+            ), 0) AS total_hourly_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE (svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}')
+          AND svt.block_timestamp >= (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+            )
+          AND svt.block_timestamp < (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+            )
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
