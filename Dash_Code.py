@@ -1755,7 +1755,7 @@ def get_last_day_chain(chain_id, sd):
 
     if chain_id != 'Total':
 
-        query = f"""
+        query_0 = f"""
        WITH latest_date AS (
             SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
             FROM main_volume_table
@@ -1781,6 +1781,38 @@ def get_last_day_chain(chain_id, sd):
         )
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        """
+
+        query = f"""
+        WITH latest_date AS (
+            SELECT DATE_TRUNC('day', MAX(block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')) AS max_date
+            FROM main_volume_table
+        )
+        SELECT 
+            TO_CHAR(
+                DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'),
+                'HH12 AM'
+            ) AS hour,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                        THEN svt.total_volume / 2
+                    ELSE svt.total_volume
+                END
+            ), 0) AS total_hourly_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE (svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}')
+          AND (svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
+                SELECT max_date - INTERVAL '1 day'
+                FROM latest_date
+            )
+          AND (svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
+                SELECT max_date
+                FROM latest_date
+            )
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
     
     else:
