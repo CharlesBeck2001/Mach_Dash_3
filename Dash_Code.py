@@ -1090,6 +1090,49 @@ def asset_fetch_day():
     FROM consolidated_volumes
     ORDER BY total_volume DESC
     """
+
+    asset_query = f"""
+    WITH consolidated_volumes AS (
+        SELECT
+            id,
+            SUM(volume) AS total_volume
+        FROM (
+            -- Volumes where the asset is the source
+            SELECT
+                source_chain AS id,
+                SUM(source_volume) AS volume
+            FROM main_volume_table
+            WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
+                    NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+                )
+              AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
+                    NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+                )
+            GROUP BY source_chain
+    
+            UNION ALL
+    
+            -- Volumes where the asset is the destination
+            SELECT
+                dest_chain AS id,
+                SUM(dest_volume) AS volume
+            FROM main_volume_table
+            WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
+                    NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+                )
+              AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
+                    NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+                )
+            GROUP BY dest_chain
+        ) combined
+        GROUP BY id
+    )
+    SELECT
+        id,
+        total_volume
+    FROM consolidated_volumes
+    ORDER BY total_volume DESC
+    """
     
     # Execute the query and process results
     asset_list = execute_sql(asset_query)
