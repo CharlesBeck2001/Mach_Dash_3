@@ -2448,15 +2448,14 @@ if "preloaded_chain" not in st.session_state:
     
 
 selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
-selected_chain = st.selectbox("Select a chain for the chain display:", chain_list)
+if selected_range_chain is not None:
+    selected_chain = st.selectbox("Select a chain for the chain display:", chain_list)
+else:
+    selected_chain = st.selectbox("Select a chain for the chain display:", chain_list_day)
 
 
 
 if selected_range_chain is not None:
-
-    st.write(st.session_state["preloaded_chain"][selected_chain + " Day Volume"])
-
-else:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Volume Data"]
     date = today - timedelta(days=selected_range_chain)
@@ -2464,6 +2463,11 @@ else:
     
     
     data = data[pd.to_datetime(data['day']) > pd.to_datetime(date)]
+    st.write(data)
+
+else:
+
+    data = st.session_state["preloaded_chain"][selected_chain + " Day Volume"]
     st.write(data)
     
 
