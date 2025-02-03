@@ -2240,21 +2240,23 @@ if "preloaded_2" not in st.session_state:
     
         preloaded_2[asset + ' Weekly Average'] = weekly_vol
         preloaded_2[asset + ' Daily Value'] = daily_vol
-
-    #for asset in asset_list_day:
-
-     #   hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
-     #   preloaded_2[asset + ' Hourly Value'] = hourly_vol
     
-   #     date = today - timedelta(days=6)
-   #     date = date.strftime('%Y-%m-%dT%H:%M:%S')
+    for asset in asset_list_day:
+
+        if asset == 'Total':
+
+            hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
+            preloaded_2[asset + ' Hourly Value'] = hourly_vol
         
-   #     week_vol = get_volume_vs_date(asset, date)
-   #     preloaded_2[asset + ' Week Volume'] = week_vol
+            date = today - timedelta(days=6)
+            date = date.strftime('%Y-%m-%dT%H:%M:%S')
+            
+            week_vol = get_volume_vs_date(asset, date)
+            preloaded_2[asset + ' Week Volume'] = week_vol
 
-    #st.session_state["preloaded_2"] = preloaded_2
+    st.session_state["preloaded_2"] = preloaded_2
     
-    #st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
+    st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
