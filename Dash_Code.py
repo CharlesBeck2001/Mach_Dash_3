@@ -831,6 +831,41 @@ def chain_fetch():
     return(chain_list)
 
 @st.cache_data
+def chain_fetch_day():
+
+    chain_query_day = f"""
+    WITH consolidated_volumes AS (
+    SELECT
+        chain,
+        SUM(volume) AS total_volume
+    FROM (
+        SELECT
+            source_chain AS chain,
+            SUM(source_volume) AS volume
+        FROM main_volume_table
+        WHERE DATE(block_timestamp) = CURRENT_DATE - INTERVAL '1 day'
+        GROUP BY source_chain
+        UNION ALL
+        SELECT
+            dest_chain AS chain,
+            SUM(dest_volume) AS volume
+        FROM main_volume_table
+        WHERE DATE(block_timestamp) = CURRENT_DATE - INTERVAL '1 day'
+        GROUP BY dest_chain
+    ) combined
+    GROUP BY chain
+    )
+    SELECT chain
+    FROM consolidated_volumes
+    WHERE chain <> ''
+    ORDER BY total_volume DESC
+    """
+    
+    chain_list = execute_sql(chain_query_day)
+    chain_list = pd.json_normalize(chain_list['result'])['chain'].tolist()
+    return(chain_list)
+
+@st.cache_data
 def asset_fetch():
     asset_query = f"""
     WITH consolidated_volumes AS (
@@ -2384,8 +2419,12 @@ time_ranges_chain = {
     "Month": 30
 }
 chain_list = chain_fetch()
-chain_list = chain_list[:8]
+#chain_list = chain_list[:8]
 chain_list = ['Total'] + chain_list
+
+chain_list_day = chain_fetch_day()
+
+chain_list_day = ['Total']+ chain_list_day
 
 chain_number_list = [7,30]
 if "preloaded_chain" not in st.session_state:
@@ -2393,11 +2432,17 @@ if "preloaded_chain" not in st.session_state:
     for chain in chain_list:
 
         st.write(chain)
-        daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
+        #daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
         chain_vol = get_volume_vs_date_chain(chain, time_point['oldest_time'][0])
 
-        preloaded_chain[chain + " Day Volume"] = daily_vol_ch
+        #preloaded_chain[chain + " Day Volume"] = daily_vol_ch
         preloaded_chain[chain + " Volume Data"] = chain_vol
+
+    for chain in chain_list_day:
+
+        st.write(chain)
+        daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
+        preloaded_chain[chain + " Day Volume"] = daily_vol_ch
 
     st.session_state["preloaded_chain"] = preloaded_chain
     
