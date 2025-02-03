@@ -1179,7 +1179,7 @@ def get_volume_vs_date_chain(chain_id, sd):
         query = f"""
         SELECT 
             TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
-            COALESCE(SUM(svt.total_volume), 0) AS total_daily_volume,
+            COALESCE(SUM(svt.total_volume), 0)/2 AS total_daily_volume,
             'Total' AS chain
         FROM main_volume_table svt
         GROUP BY DATE_TRUNC('day', svt.block_timestamp)
