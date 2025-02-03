@@ -2450,6 +2450,7 @@ if "preloaded_chain" not in st.session_state:
 selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
 if time_ranges_chain[selected_range_chain] is not None:
     selected_chain = st.selectbox("Select a chain for the chain display:", chain_list)
+    
 else:
     selected_chain = st.selectbox("Select a chain for the chain display:", chain_list_day)
 
@@ -2461,14 +2462,94 @@ if time_ranges_chain[selected_range_chain] is not None:
     date = today - timedelta(days=time_ranges_chain[selected_range_chain])
     date = date.strftime('%Y-%m-%dT%H:%M:%S')
     
-    
     data = data[pd.to_datetime(data['day']) > pd.to_datetime(date)]
-    st.write(data)
+
+    if data.empty:
+        
+        st.warning(f"No data available for {selected_chain}!")
+        
+    else:
+        # Add the 'asset' column (asset name is already included in 'data')
+
+        data['day'] = pd.to_datetime(data['day'])
+        # Pivot the data to have separate columns for each asset
+        pivot_data = all_assets_data_day.pivot(index='day', columns='chain', values='total_daily_volume')
+        pivot_data = pivot_data.fillna(0)
+        pivot_data = pivot_data.reset_index()
+        # Reset index to make it Plotly-compatible
+    
+        # Melt the data back into long format for Plotly
+        melted_data = pivot_data.melt(id_vars='day', var_name='chain', value_name='Total Daily Volume')
+    
+        # Create an interactive bar chart with Plotly
+        fig = px.bar(
+            melted_data,
+            x='day',
+            y='Total Daily Volume',
+            color='chain',
+            title="Volume In The Last Week",
+            labels={'day': 'Date', 'Total Daily Volume': 'Volume'},
+            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': True, 'asset': True},
+        )
+    
+        # Update layout for better readability
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Volume",
+            legend_title="Chain",
+            hovermode="x unified",
+        )
+    
+        # Render the chart in Streamlit
+        st.plotly_chart(fig, use_container_width=True)
+    
 
 else:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Day Volume"]
-    st.write(data)
+
+    # Apply the function to the 'hour' column
+    #data['date'] = data['hour'].apply(apply_datetime_conversion)
+    
+    if data.empty:
+        st.warning(f"No data available for {selected_chain}!")
+    else:
+        # Add the 'asset' column (asset name is already included in 'data')
+        data['date'] = assign_dates_to_df(data['hour'])
+    
+    #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
+    # Pivot the data to have separate columns for each asset
+    
+        pivot_data = data.pivot(index='date', columns='chain', values='total_hourly_volume')
+        pivot_data = pivot_data.fillna(0)
+        pivot_data = pivot_data.reset_index()
+        # Melt the data back into long format for Plotly
+        
+        
+        melted_data = pivot_data.melt(id_vars=['date'], var_name='chain', value_name='total_hourly_volume')
+    
+        # Create an interactive bar chart with Plotly
+        fig = px.bar(
+            melted_data,
+            x='date',
+            y='total_hourly_volume',
+            color='chain',
+            title="Volume By Hour For Latest Calendar Day of Active Trading",
+            labels={'date': 'Date & Time', 'total_hourly_volume': 'Volume'},
+            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'asset': True},
+        )
+    
+        # Update layout for better readability
+        fig.update_layout(
+            xaxis_title="Date & Time",
+            yaxis_title="Volume",
+            legend_title="Chain",
+            hovermode="x unified",
+        )
+    
+        # Render the chart in Streamlit
+        st.plotly_chart(fig, use_container_width=True)
+
     
 
 time_ranges_2 = {
