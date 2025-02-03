@@ -2489,7 +2489,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             color='chain',
             title="Volume In The Last Week",
             labels={'day': 'Date', 'Total Daily Volume': 'Volume'},
-            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': True, 'asset': True},
+            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': True, 'chain': True},
         )
     
         # Update layout for better readability
@@ -2536,7 +2536,7 @@ else:
             color='chain',
             title="Volume By Hour For Latest Calendar Day of Active Trading",
             labels={'date': 'Date & Time', 'total_hourly_volume': 'Volume'},
-            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'asset': True},
+            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'chain': True},
         )
     
         # Update layout for better readability
