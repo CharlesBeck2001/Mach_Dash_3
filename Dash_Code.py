@@ -839,18 +839,32 @@ def chain_fetch_day():
         chain,
         SUM(volume) AS total_volume
     FROM (
+        -- Aggregate source chain volumes over the last 24 hours (Eastern Time)
         SELECT
             source_chain AS chain,
             SUM(source_volume) AS volume
         FROM main_volume_table
-        WHERE DATE(block_timestamp) = CURRENT_DATE - INTERVAL '1 day'
+        WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
+                  NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+              )
+          AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
+                  NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+              )
         GROUP BY source_chain
+
         UNION ALL
+
+        -- Aggregate destination chain volumes over the last 24 hours (Eastern Time)
         SELECT
             dest_chain AS chain,
             SUM(dest_volume) AS volume
         FROM main_volume_table
-        WHERE DATE(block_timestamp) = CURRENT_DATE - INTERVAL '1 day'
+        WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
+                  NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+              )
+          AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
+                  NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+              )
         GROUP BY dest_chain
     ) combined
     GROUP BY chain
@@ -2256,7 +2270,7 @@ if "preloaded_2" not in st.session_state:
 
     st.session_state["preloaded_2"] = preloaded_2
     
-    st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
+    #st.write(st.session_state["preloaded_2"]['Total' + ' Hourly Value'])
 
 time_ranges_2 = {
     "All Time": None,  # Special case for no date filter
