@@ -2751,7 +2751,7 @@ else:
         st.warning(f"No data available for {selected_chain}!")
     else:
         # Add the 'asset' column (asset name is already included in 'data')
-        data['date'] = data['hour']
+        data['date'] = assign_dates_to_df(data['hour'])
     
     #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
     # Pivot the data to have separate columns for each asset
@@ -2848,7 +2848,7 @@ else:
         chain_data = st.session_state["preloaded_chain"][chain + " Day Volume"].copy()
         if not chain_data.empty:
             # Compute a new 'date' column from the 'hour' column
-            chain_data['date'] = assign_dates_to_df(chain_data['hour'])
+            chain_data['date'] = chain_data['hour']
         data_list.append(chain_data)
 
     data = pd.concat(data_list, ignore_index=True)
