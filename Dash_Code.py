@@ -2458,6 +2458,7 @@ else:
 if selected_range_chain is not None:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Volume Data"]
+    st.write(selected_range_chain)
     date = today - timedelta(days=selected_range_chain)
     date = date.strftime('%Y-%m-%dT%H:%M:%S')
     
