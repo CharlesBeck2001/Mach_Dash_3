@@ -2459,6 +2459,7 @@ else:
 if time_ranges_chain[selected_range_chain] is not None:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Volume Data"]
+    st.write(data)
     date = today - timedelta(days=time_ranges_chain[selected_range_chain])
     date = date.strftime('%Y-%m-%dT%H:%M:%S')
     
@@ -2507,7 +2508,6 @@ if time_ranges_chain[selected_range_chain] is not None:
 else:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Day Volume"]
-    st.write(data)
     # Apply the function to the 'hour' column
     #data['date'] = data['hour'].apply(apply_datetime_conversion)
     
