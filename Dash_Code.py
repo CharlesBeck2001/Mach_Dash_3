@@ -2455,7 +2455,7 @@ else:
 
 
 
-if selected_range_chain is not None:
+if time_ranges_chain[selected_range_chain] is not None:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Volume Data"]
     date = today - timedelta(days=time_ranges_chain[selected_range_chain])
