@@ -1913,7 +1913,7 @@ def get_last_day_chain(chain_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
 
-        query = f"""
+        query_old_2 = f"""
         SELECT 
             TO_CHAR(
                 DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'),
@@ -1942,10 +1942,53 @@ def get_last_day_chain(chain_id, sd):
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
+
+        query = f"""
+        SELECT 
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS full_datetime,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                        THEN svt.total_volume  -- Entire volume is counted once
+                    WHEN svt.source_chain = '{chain_id}' 
+                        THEN svt.source_volume  -- Only count source volume
+                    WHEN svt.dest_chain = '{chain_id}' 
+                        THEN svt.dest_volume  -- Only count destination volume
+                    ELSE 0
+                END
+            ), 0) AS total_hourly_volume,
+            '{chain_id}' AS chain
+        FROM main_volume_table svt
+        WHERE (svt.source_chain = '{chain_id}' OR svt.dest_chain = '{chain_id}')
+          AND svt.block_timestamp >= (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+            )
+          AND svt.block_timestamp < (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+            )
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY full_datetime
+        """
     
     else:
 
         query = f"""
+        SELECT 
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS full_datetime,
+            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            'Total' AS chain
+        FROM main_volume_table svt
+        WHERE svt.block_timestamp >= (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+            )
+          AND svt.block_timestamp < (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
+            )
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York');
+        """
+        
+        query_old_2 = f"""
         SELECT 
             TO_CHAR(
                 DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'),
@@ -2708,7 +2751,7 @@ else:
         st.warning(f"No data available for {selected_chain}!")
     else:
         # Add the 'asset' column (asset name is already included in 'data')
-        data['date'] = assign_dates_to_df(data['hour'])
+        data['date'] = data['hour']
     
     #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
     # Pivot the data to have separate columns for each asset
