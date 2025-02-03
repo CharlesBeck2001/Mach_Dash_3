@@ -2507,7 +2507,7 @@ if time_ranges_chain[selected_range_chain] is not None:
 else:
 
     data = st.session_state["preloaded_chain"][selected_chain + " Day Volume"]
-
+    st.write(data)
     # Apply the function to the 'hour' column
     #data['date'] = data['hour'].apply(apply_datetime_conversion)
     
