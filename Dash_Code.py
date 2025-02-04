@@ -3017,10 +3017,10 @@ if time_ranges_chain[selected_range_chain] is not None:
         
         data = data.merge(daily_asset_sum, on="day", how="left")
         data["Other Volume"] = data_total["total_daily_volume"] - data["Asset Sum"]
-        
+        st.write(data["Other Volume"])
         # Ensure 'Other' volume is not negative (in case of rounding errors)
         data["Other Volume"] = data["Other Volume"].apply(lambda x: max(x, 0))
-        st.write(data["Other Volume"])
+        
         
         # Append 'Other' category to data
         other_data = data[['day', 'Other Volume']].drop_duplicates()
