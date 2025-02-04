@@ -2833,6 +2833,17 @@ if time_ranges_chain[selected_range_chain] is not None:
         # Merge total volume back into data
         data = data.merge(total_volume_per_day, on="day", how="left")
     
+        # 🔹 Generate unique colors for each chain dynamically
+        unique_chains = data["chain"].unique()
+        color_palette = px.colors.qualitative.Set3  # High-contrast colors
+        if len(unique_chains) > len(color_palette):  
+            # Extend color palette if needed
+            extra_colors = px.colors.sample_colorscale("rainbow", len(unique_chains) - len(color_palette))
+            color_palette.extend(extra_colors)
+        
+        # Create color mapping for each chain
+        color_map = {chain: color_palette[i % len(color_palette)] for i, chain in enumerate(unique_chains)}
+    
         # Create a stacked bar chart using Plotly Express
         fig = px.bar(
             data,
@@ -2842,6 +2853,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             title="Volume In The Last Week/Month",
             labels={'day': 'Date', 'total_daily_volume': 'Volume'},
             hover_data={'day': '|%Y-%m-%d', 'total_daily_volume': ':,.0f', 'chain': True, 'Total Volume': ':,.0f'},
+            color_discrete_map=color_map,  # Assign unique colors
         )
     
         # Update layout to stack the bars
