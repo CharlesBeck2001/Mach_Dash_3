@@ -2399,7 +2399,7 @@ def assign_dates_to_df(hours_series):
 
 asset_list = asset_fetch()
 asset_list = asset_list[:15]
-asset_list_2 = asset_list
+asset_list_2 = asset_list[:5]
 asset_list = ['Total'] + asset_list
 
 asset_list_day = asset_fetch_day()
@@ -2423,7 +2423,7 @@ if "preloaded_2" not in st.session_state:
     
     for asset in asset_list_day:
 
-        st.write(asset)
+        #st.write(asset)
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
     
@@ -3056,7 +3056,7 @@ else:
         data_list.append(asset_data)
     
     data = pd.concat(data_list, ignore_index=True)
-    st.write(data)
+    #st.write(data)
     if data.empty:
         st.warning("No hourly data available for the latest day!")
     else:
