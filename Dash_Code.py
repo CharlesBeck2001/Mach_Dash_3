@@ -2753,7 +2753,7 @@ else:
         # Add the 'asset' column (asset name is already included in 'data')
         if selected_chain == 'Total':
 
-            st.write(data)
+            #st.write(data)
             data['date'] = data['hour']
 
         else:
@@ -2857,18 +2857,22 @@ else:
             # Compute a new 'date' column from the 'hour' column
             chain_data['date'] = chain_data['hour']
         data_list.append(chain_data)
-
+    
     data = pd.concat(data_list, ignore_index=True)
-
+    
     if data.empty:
         st.warning("No hourly data available for the latest day!")
     else:
         # Pivot so that each chain becomes a column of total_hourly_volume values
         pivot_data = data.pivot(index='date', columns='chain', values='total_hourly_volume')
         pivot_data = pivot_data.fillna(0).reset_index()
+    
+        # Compute total volume per hour
+        pivot_data['total_volume'] = pivot_data.drop(columns=['date']).sum(axis=1)
+    
         # Melt the pivoted dataframe back to long format for Plotly
-        melted_data = pivot_data.melt(id_vars=['date'], var_name='chain', value_name='total_hourly_volume')
-
+        melted_data = pivot_data.melt(id_vars=['date', 'total_volume'], var_name='chain', value_name='total_hourly_volume')
+    
         # Create a stacked bar chart using Plotly Express
         fig = px.bar(
             melted_data,
@@ -2877,18 +2881,18 @@ else:
             color='chain',
             title="Volume By Hour For Latest Calendar Day of Active Trading",
             labels={'date': 'Date & Time', 'total_hourly_volume': 'Volume'},
-            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'chain': True},
+            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'chain': True, 'total_volume': True},
         )
-
-        # Update layout to stack the bars
+    
+        # Update layout to improve hover behavior
         fig.update_layout(
             xaxis_title="Date & Time",
             yaxis_title="Volume",
             legend_title="Chain",
-            hovermode="x unified",
+            hovermode="x",  # Show only hovered section, not all stacked sections
             barmode="stack"
         )
-
+    
         st.plotly_chart(fig, use_container_width=True)
 
 
