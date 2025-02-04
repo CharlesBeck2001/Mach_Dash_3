@@ -2814,6 +2814,7 @@ if time_ranges_chain[selected_range_chain] is not None:
     
         # Filter the chain's data based on the cutoff date
         chain_data = chain_data[pd.to_datetime(chain_data['day']) > pd.to_datetime(date_cutoff)]
+        chain_data["chain"] = chain  # Ensure chain name is present in data
         data_list.append(chain_data)
     
     # Concatenate all chains’ data
@@ -2824,26 +2825,23 @@ if time_ranges_chain[selected_range_chain] is not None:
     else:
         # Ensure the date column is datetime
         data['day'] = pd.to_datetime(data['day'])
-        
-        # Pivot so that each chain becomes a column of total_daily_volume values
-        pivot_data = data.pivot(index='day', columns='chain', values='total_daily_volume')
-        pivot_data = pivot_data.fillna(0).reset_index()
     
         # Calculate total volume per day
-        pivot_data['Total Volume'] = pivot_data.iloc[:, 1:].sum(axis=1)
+        total_volume_per_day = data.groupby("day")["total_daily_volume"].sum().reset_index()
+        total_volume_per_day.rename(columns={"total_daily_volume": "Total Volume"}, inplace=True)
     
-        # Melt the pivoted dataframe back to long format for Plotly
-        melted_data = pivot_data.melt(id_vars=['day', 'Total Volume'], var_name='chain', value_name='Total Daily Volume')
+        # Merge total volume back into data
+        data = data.merge(total_volume_per_day, on="day", how="left")
     
         # Create a stacked bar chart using Plotly Express
         fig = px.bar(
-            melted_data,
+            data,
             x='day',
-            y='Total Daily Volume',
+            y='total_daily_volume',
             color='chain',
             title="Volume In The Last Week/Month",
-            labels={'day': 'Date', 'Total Daily Volume': 'Volume'},
-            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': ':,.0f', 'chain': True, 'Total Volume': ':,.0f'},
+            labels={'day': 'Date', 'total_daily_volume': 'Volume'},
+            hover_data={'day': '|%Y-%m-%d', 'total_daily_volume': ':,.0f', 'chain': True, 'Total Volume': ':,.0f'},
         )
     
         # Update layout to stack the bars
@@ -2851,7 +2849,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             xaxis_title="Date",
             yaxis_title="Volume",
             legend_title="Chain",
-            hovermode="x unified",
+            hovermode="closest",  # Ensures only the section under the cursor is shown
             barmode="stack"
         )
     
