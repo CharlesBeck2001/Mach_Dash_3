@@ -2807,27 +2807,34 @@ if time_ranges_chain[selected_range_chain] is not None:
     # Loop through every chain to get its volume data
     for chain in chain_list_def:
         chain_data = st.session_state["preloaded_chain"][chain + " Volume Data"].copy()
+        
         # Define the cutoff date based on the selected range
         date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
         date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
+    
         # Filter the chain's data based on the cutoff date
         chain_data = chain_data[pd.to_datetime(chain_data['day']) > pd.to_datetime(date_cutoff)]
         data_list.append(chain_data)
-
+    
     # Concatenate all chains’ data
     data = pd.concat(data_list, ignore_index=True)
-
+    
     if data.empty:
         st.warning("No data available for the selected time range!")
     else:
         # Ensure the date column is datetime
         data['day'] = pd.to_datetime(data['day'])
+        
         # Pivot so that each chain becomes a column of total_daily_volume values
         pivot_data = data.pivot(index='day', columns='chain', values='total_daily_volume')
         pivot_data = pivot_data.fillna(0).reset_index()
+    
+        # Calculate total volume per day
+        pivot_data['Total Volume'] = pivot_data.iloc[:, 1:].sum(axis=1)
+    
         # Melt the pivoted dataframe back to long format for Plotly
-        melted_data = pivot_data.melt(id_vars='day', var_name='chain', value_name='Total Daily Volume')
-
+        melted_data = pivot_data.melt(id_vars=['day', 'Total Volume'], var_name='chain', value_name='Total Daily Volume')
+    
         # Create a stacked bar chart using Plotly Express
         fig = px.bar(
             melted_data,
@@ -2836,9 +2843,9 @@ if time_ranges_chain[selected_range_chain] is not None:
             color='chain',
             title="Volume In The Last Week/Month",
             labels={'day': 'Date', 'Total Daily Volume': 'Volume'},
-            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': True, 'chain': True},
+            hover_data={'day': '|%Y-%m-%d', 'Total Daily Volume': ':,.0f', 'chain': True, 'Total Volume': ':,.0f'},
         )
-
+    
         # Update layout to stack the bars
         fig.update_layout(
             xaxis_title="Date",
@@ -2847,7 +2854,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             hovermode="x unified",
             barmode="stack"
         )
-
+    
         st.plotly_chart(fig, use_container_width=True)
 
 else:
