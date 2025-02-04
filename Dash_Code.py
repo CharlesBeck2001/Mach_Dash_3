@@ -1974,7 +1974,7 @@ def get_last_day_chain(chain_id, sd):
 
         query = f"""
         SELECT 
-            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS full_datetime,
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             'Total' AS chain
         FROM main_volume_table svt
