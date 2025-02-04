@@ -2977,51 +2977,67 @@ if time_ranges_chain[selected_range_chain] is not None:
     # -------------------------------
     # DAILY VOLUME DATA (e.g. Week or Month)
     # -------------------------------
+    data_total = st.session_state["preloaded_chain"]["Total Volume Data"]
+
+    date = today - timedelta(days=time_ranges_chain[selected_range_chain])
+    date = date.strftime('%Y-%m-%dT%H:%M:%S')
+    
+    data_total = data_total[pd.to_datetime(data_total['day']) > pd.to_datetime(date)]
+    data_total['day'] = pd.to_datetime(data_total['day'])
+    
     data_list = []
-    # Loop through every chain to get its volume data
+    # Loop through every asset to get its volume data
     for asset in asset_list_2:
         asset_data = st.session_state['preloaded_2'][asset + ' Daily Value'].copy()
         
-        # Define the cutoff date based on the selected range
         date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
         date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
-    
-        # Filter the chain's data based on the cutoff date
+        
         asset_data = asset_data[pd.to_datetime(asset_data['day']) > pd.to_datetime(date_cutoff)]
-        asset_data["asset"] = asset  # Ensure chain name is present in data
+        asset_data["asset"] = asset  # Ensure asset name is present in data
         data_list.append(asset_data)
     
-    # Concatenate all chains’ data
     data = pd.concat(data_list, ignore_index=True)
-
     
     if data.empty:
         st.warning("No data available for the selected time range!")
     else:
-        # Ensure the date column is datetime
         data['day'] = pd.to_datetime(data['day'])
-    
+        
         # Calculate total volume per day
         total_volume_per_day = data.groupby("day")["total_daily_volume"].sum().reset_index()
         total_volume_per_day.rename(columns={"total_daily_volume": "Total Volume"}, inplace=True)
-    
+        
         # Merge total volume back into data
         data = data.merge(total_volume_per_day, on="day", how="left")
-    
-        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
+        
+        # Calculate 'Other' volume (difference between total and sum of known assets)
+        daily_asset_sum = data.groupby("day")["total_daily_volume"].sum().reset_index()
+        daily_asset_sum.rename(columns={"total_daily_volume": "Asset Sum"}, inplace=True)
+        
+        data = data.merge(daily_asset_sum, on="day", how="left")
+        data["Other Volume"] = data["Total Volume"] - data["Asset Sum"]
+        
+        # Ensure 'Other' volume is not negative (in case of rounding errors)
+        data["Other Volume"] = data["Other Volume"].apply(lambda x: max(x, 0))
+        
+        # Append 'Other' category to data
+        other_data = data[['day', 'Other Volume']].drop_duplicates()
+        other_data["asset"] = "Other"
+        other_data.rename(columns={"Other Volume": "total_daily_volume"}, inplace=True)
+        data = pd.concat([data, other_data], ignore_index=True)
+        
+        # Use a strong color palette
         unique_assets = data["asset"].unique()
-        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
-    
+        color_palette = px.colors.qualitative.Set1  
         if len(unique_assets) > len(color_palette):  
             extra_needed = len(unique_assets) - len(color_palette)
-            if extra_needed > 0:  # ✅ Prevent division by zero
-                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
-                color_palette.extend(extra_colors)
-    
-        # Create color mapping for each chain
-        color_map = {chain: color_palette[i % len(color_palette)] for i, chain in enumerate(unique_chains)}
-    
-        # Create a stacked bar chart using Plotly Express
+            extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
+            color_palette.extend(extra_colors)
+        
+        color_map = {asset: color_palette[i % len(color_palette)] for i, asset in enumerate(unique_assets)}
+        color_map["Other"] = "#A0A0A0"  # Set 'Other' to a neutral gray
+        
         fig = px.bar(
             data,
             x='day',
@@ -3030,24 +3046,26 @@ if time_ranges_chain[selected_range_chain] is not None:
             title="Volume In The Last Week/Month",
             labels={'day': 'Date', 'total_daily_volume': 'Volume'},
             hover_data={'day': '|%Y-%m-%d', 'total_daily_volume': ':,.0f', 'asset': True, 'Total Volume': ':,.0f'},
-            color_discrete_map=color_map,  # Assign unique colors
+            color_discrete_map=color_map,
         )
-    
-        # Update layout to stack the bars
+        
         fig.update_layout(
             xaxis_title="Date",
             yaxis_title="Volume",
             legend_title="Asset",
-            hovermode="closest",  # Ensures only the section under the cursor is shown
+            hovermode="closest",
             barmode="stack"
         )
-    
+        
         st.plotly_chart(fig, use_container_width=True)
 
 else:
     # -------------------------------
     # HOURLY VOLUME DATA (Day)
     # -------------------------------
+    data_total = st.session_state["preloaded_chain"]["Total Day Volume"]
+    data_total['date'] = data_total['hour']
+    
     data_list = []
     for asset in asset_list_day_2:
         asset_data = st.session_state["preloaded_2"][asset + ' Hourly Value'].copy()
