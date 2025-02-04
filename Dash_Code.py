@@ -2981,7 +2981,7 @@ if time_ranges_chain[selected_range_chain] is not None:
     # Loop through every chain to get its volume data
     for asset in asset_list_2:
         asset_data = st.session_state['preloaded_2'][asset + ' Daily Value'].copy()
-        
+        st.write(asset_data)
         # Define the cutoff date based on the selected range
         date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
         date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
@@ -2994,7 +2994,7 @@ if time_ranges_chain[selected_range_chain] is not None:
     # Concatenate all chains’ data
     data = pd.concat(data_list, ignore_index=True)
 
-    st.write(data)
+    
     if data.empty:
         st.warning("No data available for the selected time range!")
     else:
@@ -3056,7 +3056,7 @@ else:
         data_list.append(asset_data)
     
     data = pd.concat(data_list, ignore_index=True)
-    st.write(data)
+    
     if data.empty:
         st.warning("No hourly data available for the latest day!")
     else:
