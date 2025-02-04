@@ -2440,7 +2440,7 @@ with col1:
     data = st.session_state["preloaded_2"]["Total Hourly Value"]
 
     #st.write(data)
-    data['date'] = assign_dates_to_df(data['hour'])
+    data['date'] = data['hour']
 
     # Apply the function to the 'hour' column
     #data['date'] = data['hour'].apply(apply_datetime_conversion)
