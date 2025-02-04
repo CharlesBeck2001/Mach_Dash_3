@@ -2890,9 +2890,22 @@ else:
         
         # Compute total volume per hour
         pivot_data['total_volume'] = pivot_data.sum(axis=1)
-    
+        
         # Convert index to a column for plotting
         pivot_data = pivot_data.reset_index()
+    
+        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
+        unique_chains = pivot_data.columns[1:-1]  # Exclude date and total_volume columns
+        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
+    
+        if len(unique_chains) > len(color_palette):  
+            extra_needed = len(unique_chains) - len(color_palette)
+            if extra_needed > 0:  # ✅ Prevent division by zero
+                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
+                color_palette.extend(extra_colors)
+    
+        # Create color mapping for each chain
+        color_map = {chain: color_palette[i % len(color_palette)] for i, chain in enumerate(unique_chains)}
     
         # Create figure manually using go.Figure()
         fig = go.Figure()
@@ -2909,6 +2922,7 @@ else:
                               "<b>Volume:</b> %{y}<br>"
                               "<b>Total Hourly Volume:</b> %{customdata[0]}<br>"
                               "<extra></extra>",  # Remove extra trace info
+                marker=dict(color=color_map[chain])  # Assign unique color
             ))
     
         # Configure layout
