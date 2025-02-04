@@ -2719,7 +2719,7 @@ if "preloaded_chain" not in st.session_state:
 
     st.session_state["preloaded_chain"] = preloaded_chain
     
-
+st.subheader("Volume Breakdown Charts")
 selected_range_chain = st.selectbox("Select a time range for the chain display:", list(time_ranges_chain.keys()))
 #if time_ranges_chain[selected_range_chain] is not None:
 #    selected_chain = st.selectbox("Select a chain for the chain display:", chain_list)
@@ -2727,7 +2727,6 @@ selected_range_chain = st.selectbox("Select a time range for the chain display:"
 #else:
 #    selected_chain = st.selectbox("Select a chain for the chain display:", chain_list_day)
 
-st.subheader("Volume Breakdown Charts")
 comment_out = '''
 if time_ranges_chain[selected_range_chain] is not None:
 
