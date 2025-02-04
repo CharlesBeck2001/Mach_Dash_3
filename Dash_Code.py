@@ -2993,7 +2993,8 @@ if time_ranges_chain[selected_range_chain] is not None:
     
     # Concatenate all chains’ data
     data = pd.concat(data_list, ignore_index=True)
-    
+
+    st.write(data)
     if data.empty:
         st.warning("No data available for the selected time range!")
     else:
@@ -3055,7 +3056,7 @@ else:
         data_list.append(asset_data)
     
     data = pd.concat(data_list, ignore_index=True)
-    
+    st.write(data)
     if data.empty:
         st.warning("No hourly data available for the latest day!")
     else:
