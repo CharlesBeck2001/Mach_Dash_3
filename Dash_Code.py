@@ -2850,11 +2850,9 @@ else:
     # HOURLY VOLUME DATA (Day)
     # -------------------------------
     data_list = []
-    # Loop through every chain in the day list
     for chain in chain_list_day_def:
         chain_data = st.session_state["preloaded_chain"][chain + " Day Volume"].copy()
         if not chain_data.empty:
-            # Compute a new 'date' column from the 'hour' column
             chain_data['date'] = chain_data['hour']
         data_list.append(chain_data)
     
@@ -2870,10 +2868,10 @@ else:
         # Compute total volume per hour
         pivot_data['total_volume'] = pivot_data.drop(columns=['date']).sum(axis=1)
     
-        # Melt the pivoted dataframe back to long format for Plotly
+        # Melt back to long format for Plotly
         melted_data = pivot_data.melt(id_vars=['date', 'total_volume'], var_name='chain', value_name='total_hourly_volume')
     
-        # Create a stacked bar chart using Plotly Express
+        # Create stacked bar chart
         fig = px.bar(
             melted_data,
             x='date',
@@ -2881,15 +2879,23 @@ else:
             color='chain',
             title="Volume By Hour For Latest Calendar Day of Active Trading",
             labels={'date': 'Date & Time', 'total_hourly_volume': 'Volume'},
-            hover_data={'date': '|%Y-%m-%d %H:%M:%S', 'total_hourly_volume': True, 'chain': True, 'total_volume': True},
+            text_auto=True,  # Show labels inside the bars
         )
     
-        # Update layout to improve hover behavior
+        # Set hover template to show both individual and total volume
+        fig.update_traces(
+            hovertemplate="<b>Chain:</b> %{customdata[0]}<br>"
+                          "<b>Volume:</b> %{y} <br>"
+                          "<b>Total Hourly Volume:</b> %{customdata[1]}",
+            customdata=melted_data[['chain', 'total_volume']],  # Custom data for tooltip
+        )
+    
+        # Adjust layout to improve hover behavior
         fig.update_layout(
             xaxis_title="Date & Time",
             yaxis_title="Volume",
             legend_title="Chain",
-            hovermode="x",  # Show only hovered section, not all stacked sections
+            hovermode="x",  # Highlights only the part of the stack you're hovering over
             barmode="stack"
         )
     
