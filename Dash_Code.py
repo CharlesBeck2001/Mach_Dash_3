@@ -1113,7 +1113,7 @@ def asset_fetch_day():
         FROM (
             -- Volumes where the asset is the source
             SELECT
-                source_chain AS id,
+                source_id AS id,
                 SUM(source_volume) AS volume
             FROM main_volume_table
             WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
@@ -1122,13 +1122,13 @@ def asset_fetch_day():
               AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
                     NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
                 )
-            GROUP BY source_chain
+            GROUP BY source_id
     
             UNION ALL
     
             -- Volumes where the asset is the destination
             SELECT
-                dest_chain AS id,
+                dest_id AS id,
                 SUM(dest_volume) AS volume
             FROM main_volume_table
             WHERE (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') >= (
@@ -1137,14 +1137,15 @@ def asset_fetch_day():
               AND (block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') < (
                     NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
                 )
-            GROUP BY dest_chain
+            GROUP BY dest_id
         ) combined
+        WHERE id IS NOT NULL  -- ✅ Exclude NULL ids before aggregation
         GROUP BY id
     )
     SELECT
-        id,
-        total_volume
+        id
     FROM consolidated_volumes
+    WHERE id <> ''  -- ✅ Exclude empty string ids
     ORDER BY total_volume DESC
     """
     
@@ -2406,7 +2407,6 @@ if "preloaded_2" not in st.session_state:
         preloaded_2[asset + ' Daily Value'] = daily_vol
     
     for asset in asset_list_day:
-
 
         st.write(asset)
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
