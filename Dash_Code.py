@@ -2880,6 +2880,7 @@ else:
                 y=pivot_data[chain],
                 name=chain,
                 customdata=pivot_data[['total_volume']],  # Attach total volume for the hour
+                hoverinfo="x+y",  # Show only the specific section hovered
                 hovertemplate="<b>Chain:</b> %{fullData.name}<br>"
                               "<b>Volume:</b> %{y}<br>"
                               "<b>Total Hourly Volume:</b> %{customdata[0]}<br>"
@@ -2893,7 +2894,7 @@ else:
             yaxis_title="Volume",
             legend_title="Chain",
             barmode="stack",  # Keep stacked format
-            hovermode="x",  # Restrict hover to a single section
+            hovermode="closest",  # Fix: Only show the specific section hovered
         )
     
         # Show the chart
