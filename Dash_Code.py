@@ -3017,7 +3017,7 @@ if time_ranges_chain[selected_range_chain] is not None:
         daily_asset_sum.rename(columns={"total_daily_volume": "Asset Sum"}, inplace=True)
         
         data = data.merge(daily_asset_sum, on="day", how="left")
-        data["Other Volume"] = data["Total Volume"] - data["Asset Sum"]
+        data["Other Volume"] = data_total["total_daily_volume"] - data["Asset Sum"]
         
         # Ensure 'Other' volume is not negative (in case of rounding errors)
         data["Other Volume"] = data["Other Volume"].apply(lambda x: max(x, 0))
