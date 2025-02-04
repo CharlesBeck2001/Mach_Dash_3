@@ -1318,11 +1318,11 @@ def get_volume_vs_date(asset_id, sd):
             TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
             COALESCE(SUM(
                 CASE 
-                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                    WHEN svt.source_chain = '{asset_id}' AND svt.dest_chain = '{asset_id}' 
                         THEN svt.total_volume  -- Entire volume is counted once
-                    WHEN svt.source_chain = '{chain_id}' 
+                    WHEN svt.source_chain = '{asset_id}' 
                         THEN svt.source_volume  -- Only count source volume
-                    WHEN svt.dest_chain = '{chain_id}' 
+                    WHEN svt.dest_chain = '{asset_id}' 
                         THEN svt.dest_volume  -- Only count destination volume
                     ELSE 0
                 END
@@ -2209,11 +2209,11 @@ def get_last_day(asset_id, sd):
             DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
             COALESCE(SUM(
                 CASE 
-                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                    WHEN svt.source_chain = '{asset_id}' AND svt.dest_chain = '{asset_id}' 
                         THEN svt.total_volume  -- Entire volume is counted once
-                    WHEN svt.source_chain = '{chain_id}' 
+                    WHEN svt.source_chain = '{asset_id}' 
                         THEN svt.source_volume  -- Only count source volume
-                    WHEN svt.dest_chain = '{chain_id}' 
+                    WHEN svt.dest_chain = '{asset_id}' 
                         THEN svt.dest_volume  -- Only count destination volume
                     ELSE 0
                 END
