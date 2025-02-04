@@ -2220,7 +2220,7 @@ def get_last_day(asset_id, sd):
             ), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
-        WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
+        WHERE (svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}')
         AND svt.block_timestamp >= (
                 NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
             )
