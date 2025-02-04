@@ -3014,6 +3014,8 @@ if time_ranges_chain[selected_range_chain] is not None:
         # Calculate 'Other' volume (difference between total and sum of known assets)
         daily_asset_sum = data.groupby("day")["total_daily_volume"].sum().reset_index()
         daily_asset_sum.rename(columns={"total_daily_volume": "Asset Sum"}, inplace=True)
+
+        st.write(daily_asset_sum)
         
         data = data.merge(daily_asset_sum, on="day", how="left")
         data["Other Volume"] = data_total["total_daily_volume"] - data["Asset Sum"]
