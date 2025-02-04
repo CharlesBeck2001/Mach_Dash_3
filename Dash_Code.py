@@ -2681,7 +2681,7 @@ if "preloaded_chain" not in st.session_state:
 
     for chain in chain_list_day:
 
-        st.write(chain)
+        #st.write(chain)
         daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
         preloaded_chain[chain + " Day Volume"] = daily_vol_ch
 
