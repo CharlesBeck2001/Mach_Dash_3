@@ -2977,81 +2977,80 @@ if time_ranges_chain[selected_range_chain] is not None:
     # -------------------------------
     # DAILY VOLUME DATA (e.g. Week or Month)
     # -------------------------------
+    # Load total volume data
     data_total = st.session_state["preloaded_chain"]["Total Volume Data"]
-
-    date = today - timedelta(days=time_ranges_chain[selected_range_chain])
-    date = date.strftime('%Y-%m-%dT%H:%M:%S')
     
-    data_total = data_total[pd.to_datetime(data_total['day']) > pd.to_datetime(date)]
+    # Define date cutoff based on selected range
+    date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
+    date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
+    
+    # Filter total volume data
+    data_total = data_total[pd.to_datetime(data_total['day']) > pd.to_datetime(date_cutoff)]
     data_total['day'] = pd.to_datetime(data_total['day'])
-    st.write(data_total)
+    
+    # Load asset-specific volume data
     data_list = []
-    # Loop through every asset to get its volume data
     for asset in asset_list_2:
         asset_data = st.session_state['preloaded_2'][asset + ' Daily Value'].copy()
-        
-        date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
-        date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
-        
+    
+        # Filter based on cutoff date
         asset_data = asset_data[pd.to_datetime(asset_data['day']) > pd.to_datetime(date_cutoff)]
-        asset_data["asset"] = asset  # Ensure asset name is present in data
+        asset_data["asset"] = asset  # Ensure asset name is included
         data_list.append(asset_data)
     
+    # Concatenate asset volume data
     data = pd.concat(data_list, ignore_index=True)
     
-    if data.empty:
+    if data.empty or data_total.empty:
         st.warning("No data available for the selected time range!")
     else:
+        # Convert 'day' column to datetime
         data['day'] = pd.to_datetime(data['day'])
-        st.write(data)
-        # Calculate total volume per day
-        total_volume_per_day = data.groupby("day")["total_daily_volume"].sum().reset_index()
-        total_volume_per_day.rename(columns={"total_daily_volume": "Total Volume"}, inplace=True)
         
-        # Merge total volume back into data
-        data = data.merge(total_volume_per_day, on="day", how="left")
-        
-        # Calculate 'Other' volume (difference between total and sum of known assets)
-        daily_asset_sum = data.groupby("day")["total_daily_volume"].sum().reset_index()
-        daily_asset_sum.rename(columns={"total_daily_volume": "Asset Sum"}, inplace=True)
-
-        st.write(daily_asset_sum)
-        
-        data = data.merge(daily_asset_sum, on="day", how="left")
-        data["Other Volume"] = data_total["total_daily_volume"] - data["Asset Sum"]
-        st.write(data["Other Volume"])
-        # Ensure 'Other' volume is not negative (in case of rounding errors)
-        data["Other Volume"] = data["Other Volume"].apply(lambda x: max(x, 0))
-        
-        
-        # Append 'Other' category to data
-        other_data = data[['day', 'Other Volume']].drop_duplicates()
+        # Compute total volume per day from asset data
+        asset_total_per_day = data.groupby("day")["total_daily_volume"].sum().reset_index()
+        asset_total_per_day.rename(columns={"total_daily_volume": "Asset Total"}, inplace=True)
+    
+        # Merge with total volume data
+        data_total = data_total[["day", "total_daily_volume"]].rename(columns={"total_daily_volume": "Total Volume"})
+        merged_data = data_total.merge(asset_total_per_day, on="day", how="left").fillna(0)
+    
+        # Compute "Other" category as the difference
+        merged_data["Other"] = merged_data["Total Volume"] - merged_data["Asset Total"]
+        merged_data.loc[merged_data["Other"] < 0, "Other"] = 0  # Ensure no negative values
+    
+        # Append "Other" category to data
+        other_data = merged_data[["day", "Other"]].copy()
         other_data["asset"] = "Other"
-        other_data.rename(columns={"Other Volume": "total_daily_volume"}, inplace=True)
+        other_data.rename(columns={"Other": "total_daily_volume"}, inplace=True)
+    
         data = pd.concat([data, other_data], ignore_index=True)
-        
-        # Use a strong color palette
+    
+        # Define a strong color palette
         unique_assets = data["asset"].unique()
-        color_palette = px.colors.qualitative.Set1  
-        if len(unique_assets) > len(color_palette):  
+        color_palette = px.colors.qualitative.Set1  # Stronger colors
+    
+        if len(unique_assets) > len(color_palette):
             extra_needed = len(unique_assets) - len(color_palette)
-            extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
+            extra_colors = px.colors.sample_colorscale("Rainbow", [i / max(1, extra_needed) for i in range(extra_needed)])
             color_palette.extend(extra_colors)
-        
+    
+        # Assign unique colors
         color_map = {asset: color_palette[i % len(color_palette)] for i, asset in enumerate(unique_assets)}
-        color_map["Other"] = "#A0A0A0"  # Set 'Other' to a neutral gray
-        
+    
+        # Create stacked bar chart
         fig = px.bar(
             data,
-            x='day',
-            y='total_daily_volume',
-            color='asset',
+            x="day",
+            y="total_daily_volume",
+            color="asset",
             title="Volume In The Last Week/Month",
-            labels={'day': 'Date', 'total_daily_volume': 'Volume'},
-            hover_data={'day': '|%Y-%m-%d', 'total_daily_volume': ':,.0f', 'asset': True, 'Total Volume': ':,.0f'},
-            color_discrete_map=color_map,
+            labels={"day": "Date", "total_daily_volume": "Volume"},
+            hover_data={"day": "|%Y-%m-%d", "total_daily_volume": ":,.0f", "asset": True, "Total Volume": ":,.0f"},
+            color_discrete_map=color_map
         )
-        
+    
+        # Update layout
         fig.update_layout(
             xaxis_title="Date",
             yaxis_title="Volume",
@@ -3059,7 +3058,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             hovermode="closest",
             barmode="stack"
         )
-        
+    
         st.plotly_chart(fig, use_container_width=True)
 
 else:
