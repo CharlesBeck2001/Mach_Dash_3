@@ -2751,7 +2751,13 @@ else:
         st.warning(f"No data available for {selected_chain}!")
     else:
         # Add the 'asset' column (asset name is already included in 'data')
-        data['date'] = assign_dates_to_df(data['hour'])
+        if selected_chain == 'Total':
+            
+            data['date'] = assign_dates_to_df(data['hour'])
+
+        else:
+
+            data['date'] = data['hour']
     
     #all_assets_data_hour['hour'] = pd.to_datetime(all_assets_data_hour['hour'])
     # Pivot the data to have separate columns for each asset
