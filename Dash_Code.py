@@ -2170,7 +2170,7 @@ def get_last_day(asset_id, sd):
         ORDER BY DATE_TRUNC('hour', svt.created_at)
         """
 
-        query_3 = f"""
+        query_4 = f"""
        WITH latest_date AS (
             SELECT DATE_TRUNC('day', MAX(block_timestamp)) AS max_date
             FROM main_volume_table
@@ -2196,6 +2196,21 @@ def get_last_day(asset_id, sd):
         )
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp)
         ORDER BY DATE_TRUNC('hour', svt.block_timestamp)
+        """
+
+        query_3 = f"""
+        SELECT 
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
+            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            '{asset_id}' AS asset
+        FROM main_volume_table svt
+        WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
+        AND svt.block_timestamp >= (
+                NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York' - INTERVAL '24 hours'
+            )
+        AND svt.block_timestamp < (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
         
     else:
@@ -2328,7 +2343,7 @@ def get_last_day(asset_id, sd):
 
         query_3 = f"""
         SELECT 
-            TO_CHAR(DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'), 'HH12 AM') AS hour,
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
             COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
             'Total' AS asset
         FROM main_volume_table svt
@@ -2368,10 +2383,12 @@ def assign_dates_to_df(hours_series):
 
 asset_list = asset_fetch()
 asset_list = asset_list[:15]
+asset_list_2 = asset_list
 asset_list = ['Total'] + asset_list
 
 asset_list_day = asset_fetch_day()
 asset_list_day = [asset for asset in asset_list_day if asset != ""]
+asset_list_day = asset_list_day[:5]
 asset_list_day_2 = asset_list_day
 #st.write(asset_list_day_2)
 asset_list_day = ['Total'] + asset_list_day
@@ -2390,16 +2407,14 @@ if "preloaded_2" not in st.session_state:
     
     for asset in asset_list_day:
 
-        if asset == 'Total':
-
-            hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
-            preloaded_2[asset + ' Hourly Value'] = hourly_vol
+        hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
+        preloaded_2[asset + ' Hourly Value'] = hourly_vol
+    
+        date = today - timedelta(days=6)
+        date = date.strftime('%Y-%m-%dT%H:%M:%S')
         
-            date = today - timedelta(days=6)
-            date = date.strftime('%Y-%m-%dT%H:%M:%S')
-            
-            week_vol = get_volume_vs_date(asset, date)
-            preloaded_2[asset + ' Week Volume'] = week_vol
+        week_vol = get_volume_vs_date(asset, date)
+        preloaded_2[asset + ' Week Volume'] = week_vol
 
     st.session_state["preloaded_2"] = preloaded_2
     
@@ -2657,6 +2672,7 @@ time_ranges_chain = {
     "Week": 7,
     "Month": 30
 }
+
 chain_list = chain_fetch()
 chain_list_def = chain_list
 #chain_list = chain_list[:8]
@@ -2671,7 +2687,6 @@ chain_number_list = [7,30]
 if "preloaded_chain" not in st.session_state:
     preloaded_chain = {}
     for chain in chain_list:
-
         
         #daily_vol_ch = get_last_day_chain(chain, time_point['oldest_time'][0])
         chain_vol = get_volume_vs_date_chain(chain, time_point['oldest_time'][0])
@@ -2931,6 +2946,148 @@ else:
             xaxis_title="Date & Time",
             yaxis_title="Volume",
             legend_title="Chain",
+            barmode="stack",  # Keep stacked format
+            hovermode="closest",  # Fix: Only show the specific section hovered
+        )
+    
+        # Show the chart
+        st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+if time_ranges_chain[selected_range_chain] is not None:
+    # -------------------------------
+    # DAILY VOLUME DATA (e.g. Week or Month)
+    # -------------------------------
+    data_list = []
+    # Loop through every chain to get its volume data
+    for asset in asset_list_2:
+        asset_data = st.session_state['preloaded_2'][asset + ' Daily Value'].copy()
+        
+        # Define the cutoff date based on the selected range
+        date_cutoff = today - timedelta(days=time_ranges_chain[selected_range_chain])
+        date_cutoff = date_cutoff.strftime('%Y-%m-%dT%H:%M:%S')
+    
+        # Filter the chain's data based on the cutoff date
+        asset_data = asset_data[pd.to_datetime(asset_data['day']) > pd.to_datetime(date_cutoff)]
+        asset_data["asset"] = asset  # Ensure chain name is present in data
+        data_list.append(asset_data)
+    
+    # Concatenate all chains’ data
+    data = pd.concat(data_list, ignore_index=True)
+    
+    if data.empty:
+        st.warning("No data available for the selected time range!")
+    else:
+        # Ensure the date column is datetime
+        data['day'] = pd.to_datetime(data['day'])
+    
+        # Calculate total volume per day
+        total_volume_per_day = data.groupby("day")["total_daily_volume"].sum().reset_index()
+        total_volume_per_day.rename(columns={"total_daily_volume": "Total Volume"}, inplace=True)
+    
+        # Merge total volume back into data
+        data = data.merge(total_volume_per_day, on="day", how="left")
+    
+        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
+        unique_assets = data["asset"].unique()
+        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
+    
+        if len(unique_assets) > len(color_palette):  
+            extra_needed = len(unique_assets) - len(color_palette)
+            if extra_needed > 0:  # ✅ Prevent division by zero
+                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
+                color_palette.extend(extra_colors)
+    
+        # Create color mapping for each chain
+        color_map = {chain: color_palette[i % len(color_palette)] for i, chain in enumerate(unique_chains)}
+    
+        # Create a stacked bar chart using Plotly Express
+        fig = px.bar(
+            data,
+            x='day',
+            y='total_daily_volume',
+            color='asset',
+            title="Volume In The Last Week/Month",
+            labels={'day': 'Date', 'total_daily_volume': 'Volume'},
+            hover_data={'day': '|%Y-%m-%d', 'total_daily_volume': ':,.0f', 'asset': True, 'Total Volume': ':,.0f'},
+            color_discrete_map=color_map,  # Assign unique colors
+        )
+    
+        # Update layout to stack the bars
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Volume",
+            legend_title="Asset",
+            hovermode="closest",  # Ensures only the section under the cursor is shown
+            barmode="stack"
+        )
+    
+        st.plotly_chart(fig, use_container_width=True)
+
+else:
+    # -------------------------------
+    # HOURLY VOLUME DATA (Day)
+    # -------------------------------
+    data_list = []
+    for asset in asset_list_day_2:
+        asset_data = st.session_state["preloaded_2"][asset + ' Hourly Value'].copy()
+        if not asset_data.empty:
+            asset_data['date'] = asset_data['hour']
+        data_list.append(asset_data)
+    
+    data = pd.concat(data_list, ignore_index=True)
+    
+    if data.empty:
+        st.warning("No hourly data available for the latest day!")
+    else:
+        # Pivot to get total hourly volume per chain
+        pivot_data = data.pivot(index='date', columns='asset', values='total_hourly_volume').fillna(0)
+        
+        # Compute total volume per hour
+        pivot_data['total_volume'] = pivot_data.sum(axis=1)
+        
+        # Convert index to a column for plotting
+        pivot_data = pivot_data.reset_index()
+    
+        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
+        unique_assets = pivot_data.columns[1:-1]  # Exclude date and total_volume columns
+        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
+    
+        if len(unique_chains) > len(color_palette):  
+            extra_needed = len(unique_chains) - len(color_palette)
+            if extra_needed > 0:  # ✅ Prevent division by zero
+                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
+                color_palette.extend(extra_colors)
+    
+        # Create color mapping for each chain
+        color_map = {asset: color_palette[i % len(color_palette)] for i, asset in enumerate(unique_assets)}
+    
+        # Create figure manually using go.Figure()
+        fig = go.Figure()
+    
+        # Add each chain as a stacked bar segment
+        for asset in pivot_data.columns[1:-1]:  # Skip 'date' and 'total_volume'
+            fig.add_trace(go.Bar(
+                x=pivot_data['date'],
+                y=pivot_data[asset],
+                name=asset,
+                customdata=pivot_data[['total_volume']],  # Attach total volume for the hour
+                hoverinfo="x+y",  # Show only the specific section hovered
+                hovertemplate="<b>Chain:</b> %{fullData.name}<br>"
+                              "<b>Volume:</b> %{y}<br>"
+                              "<b>Total Hourly Volume:</b> %{customdata[0]}<br>"
+                              "<extra></extra>",  # Remove extra trace info
+                marker=dict(color=color_map[asset])  # Assign unique color
+            ))
+    
+        # Configure layout
+        fig.update_layout(
+            title="Volume By Hour For Latest Calendar Day of Active Trading",
+            xaxis_title="Date & Time",
+            yaxis_title="Volume",
+            legend_title="Asset",
             barmode="stack",  # Keep stacked format
             hovermode="closest",  # Fix: Only show the specific section hovered
         )
