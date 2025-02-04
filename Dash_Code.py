@@ -3082,29 +3082,19 @@ else:
     if data.empty or data_total.empty:
         st.warning("No hourly data available for the latest day!")
     else:
-        # Pivot to get total hourly volume per asset
+        # Pivot to get total hourly volume per chain
         pivot_data = data.pivot(index='date', columns='asset', values='total_hourly_volume').fillna(0)
     
-        # Compute total asset volume per hour
-        pivot_data['asset_total_volume'] = pivot_data.sum(axis=1)
-    
-        # Merge with total volume data
-        data_total = data_total[['date', 'total_hourly_volume']].rename(columns={'total_hourly_volume': 'Total Volume'})
-        merged_data = data_total.merge(pivot_data, on='date', how='left').fillna(0)
-    
-        # Compute "Other" category
-        merged_data["Other"] = merged_data["Total Volume"] - merged_data["asset_total_volume"]
-        merged_data.loc[merged_data["Other"] < 0, "Other"] = 0  # Ensure no negative values
-    
-        # Add "Other" to pivot data
-        pivot_data = merged_data.drop(columns=["Total Volume", "asset_total_volume"])
+        # Compute "Other" category as the difference between total recorded volume and the sum of all known assets
+        pivot_data["Other"] = data_total.set_index("date")["total_hourly_volume"] - pivot_data.sum(axis=1)
+        pivot_data["Other"] = pivot_data["Other"].clip(lower=0)  # Ensure no negative values
     
         # Convert index to a column for plotting
         pivot_data = pivot_data.reset_index()
     
-        # Define a strong color palette
+        # Define color palette
         unique_assets = pivot_data.columns[1:]  # Exclude 'date' column
-        color_palette = px.colors.qualitative.Set1  # Stronger colors
+        color_palette = px.colors.qualitative.Set1
     
         if len(unique_assets) > len(color_palette):
             extra_needed = len(unique_assets) - len(color_palette)
@@ -3123,8 +3113,7 @@ else:
                 x=pivot_data['date'],
                 y=pivot_data[asset],
                 name=asset,
-                hoverinfo="x+y",
-                marker=dict(color=color_map[asset])  # Assign unique color
+                marker=dict(color=color_map[asset])
             ))
     
         # Configure layout
@@ -3133,7 +3122,7 @@ else:
             xaxis_title="Date & Time",
             yaxis_title="Volume",
             legend_title="Asset",
-            barmode="stack",  # Keep stacked format
+            barmode="stack",
             hovermode="closest",
         )
     
