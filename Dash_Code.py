@@ -2836,11 +2836,13 @@ if time_ranges_chain[selected_range_chain] is not None:
         # 🔹 Generate unique colors for each chain dynamically
         unique_chains = data["chain"].unique()
         color_palette = px.colors.qualitative.Set3  # High-contrast colors
+    
         if len(unique_chains) > len(color_palette):  
-            # Extend color palette if needed
-            extra_colors = px.colors.sample_colorscale("rainbow", len(unique_chains) - len(color_palette))
-            color_palette.extend(extra_colors)
-        
+            extra_needed = len(unique_chains) - len(color_palette)
+            if extra_needed > 0:  # ✅ Prevent division by zero
+                extra_colors = px.colors.sample_colorscale("rainbow", [i / extra_needed for i in range(extra_needed)])
+                color_palette.extend(extra_colors)
+    
         # Create color mapping for each chain
         color_map = {chain: color_palette[i % len(color_palette)] for i, chain in enumerate(unique_chains)}
     
