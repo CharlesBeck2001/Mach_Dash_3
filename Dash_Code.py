@@ -1985,7 +1985,7 @@ def get_last_day_chain(chain_id, sd):
                 NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York'
             )
         GROUP BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
-        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York');
+        ORDER BY DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York')
         """
         
         query_old_2 = f"""
