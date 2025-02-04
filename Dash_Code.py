@@ -2984,7 +2984,8 @@ if time_ranges_chain[selected_range_chain] is not None:
     
     data_total = data_total[pd.to_datetime(data_total['day']) > pd.to_datetime(date)]
     data_total['day'] = pd.to_datetime(data_total['day'])
-    
+
+    st.write(data_total)
     data_list = []
     # Loop through every asset to get its volume data
     for asset in asset_list_2:
