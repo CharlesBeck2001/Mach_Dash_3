@@ -3065,9 +3065,10 @@ else:
     # -------------------------------
     # HOURLY VOLUME DATA (Day)
     # -------------------------------
-    data_total = st.session_state["preloaded_chain"]["Total Day Volume"]
+    data_total = st.session_state["preloaded_chain"]["Total Day Volume"].copy()
     data_total['date'] = data_total['hour']
     
+    # Load asset-specific hourly volume data
     data_list = []
     for asset in asset_list_day_2:
         asset_data = st.session_state["preloaded_2"][asset + ' Hourly Value'].copy()
@@ -3075,48 +3076,54 @@ else:
             asset_data['date'] = asset_data['hour']
         data_list.append(asset_data)
     
+    # Concatenate asset data
     data = pd.concat(data_list, ignore_index=True)
-    #st.write(data)
-    if data.empty:
+    
+    if data.empty or data_total.empty:
         st.warning("No hourly data available for the latest day!")
     else:
-        # Pivot to get total hourly volume per chain
+        # Pivot to get total hourly volume per asset
         pivot_data = data.pivot(index='date', columns='asset', values='total_hourly_volume').fillna(0)
-        
-        # Compute total volume per hour
-        pivot_data['total_volume'] = pivot_data.sum(axis=1)
-        
+    
+        # Compute total asset volume per hour
+        pivot_data['asset_total_volume'] = pivot_data.sum(axis=1)
+    
+        # Merge with total volume data
+        data_total = data_total[['date', 'total_hourly_volume']].rename(columns={'total_hourly_volume': 'Total Volume'})
+        merged_data = data_total.merge(pivot_data, on='date', how='left').fillna(0)
+    
+        # Compute "Other" category
+        merged_data["Other"] = merged_data["Total Volume"] - merged_data["asset_total_volume"]
+        merged_data.loc[merged_data["Other"] < 0, "Other"] = 0  # Ensure no negative values
+    
+        # Add "Other" to pivot data
+        pivot_data = merged_data.drop(columns=["Total Volume", "asset_total_volume"])
+    
         # Convert index to a column for plotting
         pivot_data = pivot_data.reset_index()
     
-        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
-        unique_assets = pivot_data.columns[1:-1]  # Exclude date and total_volume columns
-        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
+        # Define a strong color palette
+        unique_assets = pivot_data.columns[1:]  # Exclude 'date' column
+        color_palette = px.colors.qualitative.Set1  # Stronger colors
     
-        if len(unique_chains) > len(color_palette):  
-            extra_needed = len(unique_chains) - len(color_palette)
-            if extra_needed > 0:  # ✅ Prevent division by zero
-                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
-                color_palette.extend(extra_colors)
+        if len(unique_assets) > len(color_palette):
+            extra_needed = len(unique_assets) - len(color_palette)
+            extra_colors = px.colors.sample_colorscale("Rainbow", [i / max(1, extra_needed) for i in range(extra_needed)])
+            color_palette.extend(extra_colors)
     
-        # Create color mapping for each chain
+        # Assign unique colors
         color_map = {asset: color_palette[i % len(color_palette)] for i, asset in enumerate(unique_assets)}
     
         # Create figure manually using go.Figure()
         fig = go.Figure()
     
-        # Add each chain as a stacked bar segment
-        for asset in pivot_data.columns[1:-1]:  # Skip 'date' and 'total_volume'
+        # Add each asset as a stacked bar segment
+        for asset in pivot_data.columns[1:]:  # Skip 'date' column
             fig.add_trace(go.Bar(
                 x=pivot_data['date'],
                 y=pivot_data[asset],
                 name=asset,
-                customdata=pivot_data[['total_volume']],  # Attach total volume for the hour
-                hoverinfo="x+y",  # Show only the specific section hovered
-                hovertemplate="<b>Chain:</b> %{fullData.name}<br>"
-                              "<b>Volume:</b> %{y}<br>"
-                              "<b>Total Hourly Volume:</b> %{customdata[0]}<br>"
-                              "<extra></extra>",  # Remove extra trace info
+                hoverinfo="x+y",
                 marker=dict(color=color_map[asset])  # Assign unique color
             ))
     
@@ -3127,7 +3134,7 @@ else:
             yaxis_title="Volume",
             legend_title="Asset",
             barmode="stack",  # Keep stacked format
-            hovermode="closest",  # Fix: Only show the specific section hovered
+            hovermode="closest",
         )
     
         # Show the chart
