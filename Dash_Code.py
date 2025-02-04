@@ -3046,7 +3046,7 @@ if time_ranges_chain[selected_range_chain] is not None:
             color="asset",
             title="Volume In The Last Week/Month",
             labels={"day": "Date", "total_daily_volume": "Volume"},
-            hover_data={"day": "|%Y-%m-%d", "total_daily_volume": ":,.0f", "asset": True, "Total Volume": ":,.0f"},
+            hover_data={"day": "|%Y-%m-%d", "total_daily_volume": ":,.0f", "asset": True, "total_daily_volume": ":,.0f"},
             color_discrete_map=color_map
         )
     
