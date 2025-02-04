@@ -2833,14 +2833,14 @@ if time_ranges_chain[selected_range_chain] is not None:
         # Merge total volume back into data
         data = data.merge(total_volume_per_day, on="day", how="left")
     
-        # 🔹 Generate unique colors for each chain dynamically
+        # 🔹 Use a more saturated color palette (e.g., Set1 or Dark2)
         unique_chains = data["chain"].unique()
-        color_palette = px.colors.qualitative.Set3  # High-contrast colors
+        color_palette = px.colors.qualitative.Set1  # Stronger, more saturated colors
     
         if len(unique_chains) > len(color_palette):  
             extra_needed = len(unique_chains) - len(color_palette)
             if extra_needed > 0:  # ✅ Prevent division by zero
-                extra_colors = px.colors.sample_colorscale("rainbow", [i / extra_needed for i in range(extra_needed)])
+                extra_colors = px.colors.sample_colorscale("Rainbow", [i / extra_needed for i in range(extra_needed)])
                 color_palette.extend(extra_colors)
     
         # Create color mapping for each chain
