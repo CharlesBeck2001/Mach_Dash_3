@@ -1318,10 +1318,15 @@ def get_volume_vs_date(asset_id, sd):
             TO_CHAR(DATE_TRUNC('day', svt.block_timestamp), 'FMMonth FMDD, YYYY') AS day,
             COALESCE(SUM(
                 CASE 
-                    WHEN svt.source_id = '{asset_id}' AND svt.dest_id = '{asset_id}' THEN svt.total_volume / 2
-                    ELSE svt.total_volume
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                        THEN svt.total_volume  -- Entire volume is counted once
+                    WHEN svt.source_chain = '{chain_id}' 
+                        THEN svt.source_volume  -- Only count source volume
+                    WHEN svt.dest_chain = '{chain_id}' 
+                        THEN svt.dest_volume  -- Only count destination volume
+                    ELSE 0
                 END
-            ), 0) AS total_daily_volume,
+            ), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
         WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
@@ -2202,7 +2207,17 @@ def get_last_day(asset_id, sd):
         query_3 = f"""
         SELECT 
             DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
-            COALESCE(SUM(svt.total_volume), 0) AS total_hourly_volume,
+            COALESCE(SUM(
+                CASE 
+                    WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
+                        THEN svt.total_volume  -- Entire volume is counted once
+                    WHEN svt.source_chain = '{chain_id}' 
+                        THEN svt.source_volume  -- Only count source volume
+                    WHEN svt.dest_chain = '{chain_id}' 
+                        THEN svt.dest_volume  -- Only count destination volume
+                    ELSE 0
+                END
+            ), 0) AS total_hourly_volume,
             '{asset_id}' AS asset
         FROM main_volume_table svt
         WHERE svt.source_id = '{asset_id}' OR svt.dest_id = '{asset_id}'
