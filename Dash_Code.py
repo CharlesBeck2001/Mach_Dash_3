@@ -2861,44 +2861,42 @@ else:
     if data.empty:
         st.warning("No hourly data available for the latest day!")
     else:
-        # Pivot so that each chain becomes a column of total_hourly_volume values
-        pivot_data = data.pivot(index='date', columns='chain', values='total_hourly_volume')
-        pivot_data = pivot_data.fillna(0).reset_index()
-    
+        # Pivot to get total hourly volume per chain
+        pivot_data = data.pivot(index='date', columns='chain', values='total_hourly_volume').fillna(0)
+        
         # Compute total volume per hour
-        pivot_data['total_volume'] = pivot_data.drop(columns=['date']).sum(axis=1)
+        pivot_data['total_volume'] = pivot_data.sum(axis=1)
     
-        # Melt back to long format for Plotly
-        melted_data = pivot_data.melt(id_vars=['date', 'total_volume'], var_name='chain', value_name='total_hourly_volume')
+        # Convert index to a column for plotting
+        pivot_data = pivot_data.reset_index()
     
-        # Create stacked bar chart
-        fig = px.bar(
-            melted_data,
-            x='date',
-            y='total_hourly_volume',
-            color='chain',
-            title="Volume By Hour For Latest Calendar Day of Active Trading",
-            labels={'date': 'Date & Time', 'total_hourly_volume': 'Volume'},
-            text_auto=True,  # Show labels inside the bars
-        )
+        # Create figure manually using go.Figure()
+        fig = go.Figure()
     
-        # Set hover template to show both individual and total volume
-        fig.update_traces(
-            hovertemplate="<b>Chain:</b> %{customdata[0]}<br>"
-                          "<b>Volume:</b> %{y} <br>"
-                          "<b>Total Hourly Volume:</b> %{customdata[1]}",
-            customdata=melted_data[['chain', 'total_volume']],  # Custom data for tooltip
-        )
+        # Add each chain as a stacked bar segment
+        for chain in pivot_data.columns[1:-1]:  # Skip 'date' and 'total_volume'
+            fig.add_trace(go.Bar(
+                x=pivot_data['date'],
+                y=pivot_data[chain],
+                name=chain,
+                customdata=pivot_data[['total_volume']],  # Attach total volume for the hour
+                hovertemplate="<b>Chain:</b> %{fullData.name}<br>"
+                              "<b>Volume:</b> %{y}<br>"
+                              "<b>Total Hourly Volume:</b> %{customdata[0]}<br>"
+                              "<extra></extra>",  # Remove extra trace info
+            ))
     
-        # Adjust layout to improve hover behavior
+        # Configure layout
         fig.update_layout(
+            title="Volume By Hour For Latest Calendar Day of Active Trading",
             xaxis_title="Date & Time",
             yaxis_title="Volume",
             legend_title="Chain",
-            hovermode="x",  # Highlights only the part of the stack you're hovering over
-            barmode="stack"
+            barmode="stack",  # Keep stacked format
+            hovermode="x",  # Restrict hover to a single section
         )
     
+        # Show the chart
         st.plotly_chart(fig, use_container_width=True)
 
 
