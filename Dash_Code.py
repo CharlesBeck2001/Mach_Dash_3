@@ -1945,7 +1945,7 @@ def get_last_day_chain(chain_id, sd):
 
         query = f"""
         SELECT 
-            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS full_datetime,
+            DATE_TRUNC('hour', svt.block_timestamp AT TIME ZONE 'UTC' AT TIME ZONE 'America/New_York') AS hour,
             COALESCE(SUM(
                 CASE 
                     WHEN svt.source_chain = '{chain_id}' AND svt.dest_chain = '{chain_id}' 
@@ -2753,7 +2753,7 @@ else:
         # Add the 'asset' column (asset name is already included in 'data')
         if selected_chain == 'Total':
             
-            data['date'] = assign_dates_to_df(data['hour'])
+            data['date'] = data['hour']
 
         else:
 
