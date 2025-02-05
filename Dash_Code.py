@@ -2423,7 +2423,7 @@ if "preloaded_2" not in st.session_state:
     
     for asset in asset_list_day:
 
-        st.write(asset)
+        #st.write(asset)
         hourly_vol = get_last_day(asset, time_point['oldest_time'][0])
         preloaded_2[asset + ' Hourly Value'] = hourly_vol
     
